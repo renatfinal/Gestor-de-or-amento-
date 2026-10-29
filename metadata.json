@@ -1,0 +1,6 @@
+{
+  "name": "JM Funilaria - Gestão de Orçamentos e Pintura",
+  "description": "Sistema moderno e profissional de orçamentos, financeiro, clientes e agenda para a oficina de pintura e funilaria JM Funilaria.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

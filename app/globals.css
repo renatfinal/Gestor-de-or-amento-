@@ -1,0 +1,10 @@
+@import "tailwindcss";
+
+:root:not(.dark) {
+  color-scheme: light;
+  color: #000000;
+}
+
+.dark {
+  color-scheme: dark;
+}
