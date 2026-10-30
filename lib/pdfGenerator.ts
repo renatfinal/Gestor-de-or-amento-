@@ -13,34 +13,39 @@ export function generateBudgetPdf(budget: Budget): jsPDF {
 
   // Primary brand header
   doc.setFillColor(15, 23, 42); // Dark slate
-  doc.rect(0, 0, pageWidth, 40, 'F');
+  doc.rect(0, 0, pageWidth, 46, 'F');
 
   // Accent stripe (cyan / spring green tint)
   doc.setFillColor(14, 165, 233);
-  doc.rect(0, 40, pageWidth, 3, 'F');
+  doc.rect(0, 46, pageWidth, 3, 'F');
 
   // Header Title
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(22);
+  doc.setFontSize(20);
   doc.setFont('helvetica', 'bold');
-  doc.text('JM FUNILARIA', 15, 18);
+  doc.text('JL AUTOMOTIVE', 15, 15);
 
-  doc.setFontSize(10);
+  doc.setFontSize(8.5);
   doc.setFont('helvetica', 'normal');
-  doc.text('OFICINA ESPECIALIZADA EM FUNILARIA & PINTURA AUTOMOTIVA', 15, 26);
-  doc.text('Orçamentos • Pintura em Estufa • Martelinho de Ouro • Polimento', 15, 32);
+  doc.setTextColor(226, 232, 240); // slate-200
+  doc.text('CNPJ: 44.161.344/0001-58  •  Fone: (44) 99937 - 0049', 15, 23);
+  doc.setTextColor(203, 213, 225); // slate-300
+  doc.text('Endereço: Rua Guilherme Naimann 198 - Jardim Bandeirantes', 15, 30);
+  doc.text('CEP: 87 308-410 - Campo Mourão - PR', 15, 37);
 
   // Budget Number and Date on Top Right
+  doc.setTextColor(255, 255, 255);
   doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
-  doc.text(`ORÇAMENTO: #${budget.id.toUpperCase()}`, pageWidth - 15, 18, { align: 'right' });
-  doc.setFontSize(9);
+  doc.text(`ORÇAMENTO: #${budget.id.toUpperCase()}`, pageWidth - 15, 15, { align: 'right' });
+  doc.setFontSize(8.5);
   doc.setFont('helvetica', 'normal');
+  doc.setTextColor(203, 213, 225);
   const creationDate = new Date(budget.createdAt).toLocaleDateString('pt-BR');
-  doc.text(`Emissão: ${creationDate}`, pageWidth - 15, 26, { align: 'right' });
-  doc.text(`Status: ${budget.status.toUpperCase()}`, pageWidth - 15, 32, { align: 'right' });
+  doc.text(`Emissão: ${creationDate}`, pageWidth - 15, 23, { align: 'right' });
+  doc.text(`Status: ${budget.status.toUpperCase()}`, pageWidth - 15, 30, { align: 'right' });
 
-  let currentY = 52;
+  let currentY = 56;
 
   // Box: Dados do Cliente e Veículo
   doc.setFillColor(248, 250, 252);
@@ -165,7 +170,7 @@ export function generateBudgetPdf(budget: Budget): jsPDF {
   doc.setFontSize(8.5);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(71, 85, 105);
-  doc.text('JM FUNILARIA - Responsável Técnico', 15 + colW / 2, currentY + 5, { align: 'center' });
+  doc.text('JL AUTOMOTIVE - Responsável Técnico', 15 + colW / 2, currentY + 5, { align: 'center' });
   doc.text(`Cliente: ${budget.clientName}`, pageWidth - 15 - colW / 2, currentY + 5, { align: 'center' });
 
   return doc;
@@ -173,20 +178,22 @@ export function generateBudgetPdf(budget: Budget): jsPDF {
 
 export function downloadBudgetPdf(budget: Budget) {
   const doc = generateBudgetPdf(budget);
-  const fileName = `Orcamento_JM_Funilaria_${budget.clientName.replace(/\s+/g, '_')}_${budget.plate || 'Veiculo'}.pdf`;
+  const fileName = `Orcamento_JL_Automotive_${budget.clientName.replace(/\s+/g, '_')}_${budget.plate || 'Veiculo'}.pdf`;
   doc.save(fileName);
 }
 
 export async function shareBudget(budget: Budget) {
-  const fileName = `Orcamento_JM_${budget.clientName.replace(/\s+/g, '_')}.pdf`;
-  const shareText = `*JM FUNILARIA - Orçamento Automotivo*\n\n` +
+  const fileName = `Orcamento_JL_${budget.clientName.replace(/\s+/g, '_')}.pdf`;
+  const shareText = `*JL AUTOMOTIVE - Orçamento Automotivo*\n` +
+    `CNPJ: 44.161.344/0001-58 | Fone: (44) 99937 - 0049\n` +
+    `Endereço: Rua Guilherme Naimann 198 - Jd. Bandeirantes - Campo Mourão/PR\n\n` +
     `👤 Cliente: ${budget.clientName}\n` +
     `🚗 Veículo: ${budget.vehicleModel} (Placa: ${budget.plate || 'N/A'}${budget.vehicleColor ? ` - Cor: ${budget.vehicleColor}` : ''})\n` +
     `🔧 Serviços: ${budget.serviceDescription}\n` +
     `📅 Previsão: ${budget.deadlineDate || 'A combinar'}\n` +
     `💰 Valor Total: ${formatBRL(budget.amount)}\n` +
     `Status: ${budget.status}\n\n` +
-    `Orçamento gerado pelo sistema JM Funilaria.`;
+    `JL Automotive - Funilaria & Pintura`;
 
   // Try Web Share API with file if supported
   if (typeof navigator !== 'undefined' && navigator.share) {
@@ -197,7 +204,7 @@ export async function shareBudget(budget: Budget) {
 
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
-          title: `Orçamento JM Funilaria - ${budget.clientName}`,
+          title: `Orçamento JL Automotive - ${budget.clientName}`,
           text: shareText,
           files: [file],
         });
@@ -205,7 +212,7 @@ export async function shareBudget(budget: Budget) {
       }
 
       await navigator.share({
-        title: `Orçamento JM Funilaria - ${budget.clientName}`,
+        title: `Orçamento JL Automotive - ${budget.clientName}`,
         text: shareText,
       });
       return { success: true, method: 'web-share-text' };

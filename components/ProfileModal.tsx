@@ -40,7 +40,7 @@ export function ProfileModal({
   const [email, setEmail] = useState(profile.email || '');
   const [password, setPassword] = useState(profile.password || '');
   const [confirmPassword, setConfirmPassword] = useState(profile.password || '');
-  const [workshopName, setWorkshopName] = useState(profile.workshopName || 'JM Funilaria & Pintura');
+  const [workshopName, setWorkshopName] = useState(profile.workshopName || 'JL Automotive & Pintura');
   const [workshopAddress, setWorkshopAddress] = useState(profile.workshopAddress || '');
 
   // UI state
@@ -119,7 +119,7 @@ export function ProfileModal({
               Perfil do Usuário
             </h2>
             <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              Gerencie seus dados de acesso e da oficina JM Funilaria
+              Gerencie seus dados de acesso e da oficina JL Automotive
             </p>
           </div>
         </div>
@@ -267,7 +267,7 @@ export function ProfileModal({
             </div>
           </div>
 
-          {/* Nome da Oficina (JM Funilaria) */}
+          {/* Nome da Oficina (JL Automotive) */}
           <div className="pt-1">
             <label className="block text-xs font-semibold mb-1 text-zinc-700 dark:text-zinc-300">
               Nome da Oficina
@@ -276,7 +276,7 @@ export function ProfileModal({
               type="text"
               value={workshopName}
               onChange={(e) => setWorkshopName(e.target.value)}
-              placeholder="JM Funilaria & Pintura Automotiva"
+              placeholder="JL Automotive & Pintura Automotiva"
               className={`w-full px-3.5 py-2.5 rounded-xl text-sm border focus:outline-hidden transition-all ${
                 isLight
                   ? 'bg-zinc-50 border-zinc-300 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 text-zinc-900'

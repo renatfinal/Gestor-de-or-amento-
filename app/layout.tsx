@@ -2,17 +2,17 @@ import type {Metadata} from 'next';
 import './globals.css'; // Global styles
 
 export const metadata: Metadata = {
-  title: 'JM Funilaria - Gestão de Orçamentos e Pintura Automotiva',
-  description: 'Sistema profissional de orçamentos, financeiro, clientes e agenda para a oficina JM Funilaria.',
+  title: 'JL Automotive - Gestão de Orçamentos e Pintura Automotiva',
+  description: 'Sistema profissional de orçamentos, financeiro, clientes e agenda para a oficina JL Automotive.',
   openGraph: {
-    title: 'JM Funilaria - Gestão de Orçamentos e Pintura Automotiva',
-    description: 'Sistema profissional de orçamentos, financeiro, clientes e agenda para a oficina JM Funilaria.',
+    title: 'JL Automotive - Gestão de Orçamentos e Pintura Automotiva',
+    description: 'Sistema profissional de orçamentos, financeiro, clientes e agenda para a oficina JL Automotive.',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'JM Funilaria - Gestão de Orçamentos e Pintura Automotiva',
-    description: 'Sistema profissional de orçamentos, financeiro, clientes e agenda para a oficina JM Funilaria.',
+    title: 'JL Automotive - Gestão de Orçamentos e Pintura Automotiva',
+    description: 'Sistema profissional de orçamentos, financeiro, clientes e agenda para a oficina JL Automotive.',
   },
 };
 

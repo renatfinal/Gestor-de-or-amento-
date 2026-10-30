@@ -262,7 +262,7 @@ export default function HomePage() {
       <div className="min-h-screen flex items-center justify-center bg-black text-white">
         <div className="flex items-center gap-3">
           <div className="w-6 h-6 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
-          <span className="font-bold text-sm tracking-wide">Carregando JM Funilaria...</span>
+          <span className="font-bold text-sm tracking-wide">Carregando JL Automotive...</span>
         </div>
       </div>
     );

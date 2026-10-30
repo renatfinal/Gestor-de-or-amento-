@@ -204,7 +204,7 @@ export function BudgetModal({
                 {initialBudget ? 'Editar Orçamento' : 'Novo Orçamento de Pintura'}
               </h2>
               <p className="text-xs font-bold text-black dark:text-zinc-400">
-                JM Funilaria • Preencha os dados e gere o orçamento profissional
+                JL Automotive • Preencha os dados e gere o orçamento profissional
               </p>
             </div>
           </div>

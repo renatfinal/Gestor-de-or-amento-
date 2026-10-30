@@ -2,6 +2,14 @@ import { Budget, Client, FinancialTransaction, UserProfile, ThemeMode } from './
 import { saveBudgetsToIndexedDb, getBudgetsFromIndexedDb } from './imageStorage';
 
 const STORAGE_KEYS = {
+  BUDGETS: 'jl_automotive_budgets_v1',
+  CLIENTS: 'jl_automotive_clients_v1',
+  TRANSACTIONS: 'jl_automotive_transactions_v1',
+  PROFILE: 'jl_automotive_profile_v1',
+  THEME: 'jl_automotive_theme_v1',
+};
+
+const LEGACY_STORAGE_KEYS = {
   BUDGETS: 'jm_funilaria_budgets_v1',
   CLIENTS: 'jm_funilaria_clients_v1',
   TRANSACTIONS: 'jm_funilaria_transactions_v1',
@@ -252,17 +260,17 @@ const INITIAL_TRANSACTIONS: FinancialTransaction[] = [
 ];
 
 const INITIAL_PROFILE: UserProfile = {
-  name: 'João Marcos Silva',
-  phone: '(11) 99876-5432',
-  email: 'jm.funilariaepintura@gmail.com',
+  name: 'JL Automotive',
+  phone: '(44) 99937-0049',
+  email: 'jl.automotive@gmail.com',
   password: 'admin',
-  workshopName: 'JM Funilaria & Pintura Automotiva',
-  workshopAddress: 'Av. das Oficinas, 450 - São Paulo, SP',
+  workshopName: 'JL Automotive - Funilaria & Pintura',
+  workshopAddress: 'Rua Guilherme Naimann 198, Jardim Bandeirantes - CEP: 87308-410 - Campo Mourão - PR',
 };
 
 export function getStoredTheme(): ThemeMode {
   if (typeof window === 'undefined') return 'dark-spring';
-  const saved = localStorage.getItem(STORAGE_KEYS.THEME) as ThemeMode | null;
+  const saved = (localStorage.getItem(STORAGE_KEYS.THEME) || localStorage.getItem(LEGACY_STORAGE_KEYS.THEME)) as ThemeMode | null;
   return saved || 'dark-spring';
 }
 
@@ -274,7 +282,7 @@ export function saveStoredTheme(theme: ThemeMode) {
 export function getStoredBudgets(): Budget[] {
   if (typeof window === 'undefined') return INITIAL_BUDGETS;
   try {
-    const item = localStorage.getItem(STORAGE_KEYS.BUDGETS);
+    const item = localStorage.getItem(STORAGE_KEYS.BUDGETS) || localStorage.getItem(LEGACY_STORAGE_KEYS.BUDGETS);
     if (!item) {
       try {
         localStorage.setItem(STORAGE_KEYS.BUDGETS, JSON.stringify(INITIAL_BUDGETS));
@@ -338,7 +346,7 @@ export function saveStoredBudgets(budgets: Budget[]) {
 export function getStoredClients(): Client[] {
   if (typeof window === 'undefined') return INITIAL_CLIENTS;
   try {
-    const item = localStorage.getItem(STORAGE_KEYS.CLIENTS);
+    const item = localStorage.getItem(STORAGE_KEYS.CLIENTS) || localStorage.getItem(LEGACY_STORAGE_KEYS.CLIENTS);
     if (!item) {
       // Sort alphabetically A-Z
       const sorted = [...INITIAL_CLIENTS].sort((a, b) =>
@@ -368,7 +376,7 @@ export function saveStoredClients(clients: Client[]) {
 export function getStoredTransactions(): FinancialTransaction[] {
   if (typeof window === 'undefined') return INITIAL_TRANSACTIONS;
   try {
-    const item = localStorage.getItem(STORAGE_KEYS.TRANSACTIONS);
+    const item = localStorage.getItem(STORAGE_KEYS.TRANSACTIONS) || localStorage.getItem(LEGACY_STORAGE_KEYS.TRANSACTIONS);
     if (!item) {
       localStorage.setItem(STORAGE_KEYS.TRANSACTIONS, JSON.stringify(INITIAL_TRANSACTIONS));
       return INITIAL_TRANSACTIONS;
@@ -392,12 +400,34 @@ export function saveStoredTransactions(transactions: FinancialTransaction[]) {
 export function getStoredProfile(): UserProfile {
   if (typeof window === 'undefined') return INITIAL_PROFILE;
   try {
-    const item = localStorage.getItem(STORAGE_KEYS.PROFILE);
+    const item = localStorage.getItem(STORAGE_KEYS.PROFILE) || localStorage.getItem(LEGACY_STORAGE_KEYS.PROFILE);
     if (!item) {
       localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(INITIAL_PROFILE));
       return INITIAL_PROFILE;
     }
-    return JSON.parse(item);
+    const parsed: UserProfile = JSON.parse(item);
+    // Automatically modernize workshop name and details if still holding legacy defaults
+    let updated = false;
+    if (parsed.workshopName && /JM Funilaria/i.test(parsed.workshopName)) {
+      parsed.workshopName = parsed.workshopName.replace(/JM Funilaria/gi, 'JL Automotive');
+      updated = true;
+    }
+    if (parsed.email && parsed.email.includes('jm.funilaria')) {
+      parsed.email = 'jl.automotive@gmail.com';
+      updated = true;
+    }
+    if (parsed.workshopAddress && parsed.workshopAddress.includes('Av. das Oficinas')) {
+      parsed.workshopAddress = 'Rua Guilherme Naimann 198, Jardim Bandeirantes - CEP: 87308-410 - Campo Mourão - PR';
+      updated = true;
+    }
+    if (parsed.phone === '(11) 99876-5432') {
+      parsed.phone = '(44) 99937-0049';
+      updated = true;
+    }
+    if (updated) {
+      localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(parsed));
+    }
+    return parsed;
   } catch (err) {
     console.error('Error reading profile:', err);
     return INITIAL_PROFILE;

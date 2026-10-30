@@ -37,7 +37,7 @@ export function Header({
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between gap-4">
-        {/* Brand & Logo: JM Funilaria */}
+        {/* Brand & Logo: JL Automotive */}
         <div className="flex items-center gap-3">
           <div
             className={`w-11 h-11 rounded-2xl flex items-center justify-center font-black text-lg shadow-sm border transition-all ${
@@ -47,7 +47,7 @@ export function Header({
             }`}
           >
             <div className="flex flex-col items-center leading-none">
-              <span className="text-xs font-black tracking-tighter">JM</span>
+              <span className="text-xs font-black tracking-tighter">JL</span>
               <Car className="w-3.5 h-3.5" />
             </div>
           </div>
@@ -55,7 +55,7 @@ export function Header({
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-lg md:text-xl font-black tracking-tight leading-none text-black dark:text-white">
-                JM Funilaria
+                JL Automotive
               </h1>
               <span
                 className={`hidden sm:inline-block text-[10px] uppercase font-black tracking-wider px-2.5 py-0.5 rounded-full ${

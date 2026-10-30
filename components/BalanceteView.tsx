@@ -99,7 +99,7 @@ export function BalanceteView({ transactions, theme }: BalanceteViewProps) {
             <div className="flex items-center gap-2">
               <BarChart3 className="w-6 h-6 text-emerald-400" />
               <h2 className="text-2xl font-black tracking-tight">
-                Balancete Financeiro JM Funilaria
+                Balancete Financeiro JL Automotive
               </h2>
             </div>
             <p className="text-xs text-zinc-300 mt-1">
