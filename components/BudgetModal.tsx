@@ -17,8 +17,10 @@ import {
   User,
   Phone,
   Palette,
+  ChevronDown,
 } from 'lucide-react';
 import { Budget, BudgetStatus, VehiclePhoto } from '@/lib/types';
+import { STATUS_OPTIONS, getStatusConfig } from '@/lib/statusConfig';
 import {
   formatCurrencyInput,
   formatDateInput,
@@ -36,16 +38,6 @@ interface BudgetModalProps {
   onSave: (budget: Budget) => void;
   theme: 'light-cyan' | 'dark-spring';
 }
-
-const STATUS_OPTIONS: BudgetStatus[] = [
-  'Pendente',
-  'Aprovado',
-  'Em Execução',
-  'Aguardando Peças',
-  'Concluído',
-  'Entregue',
-  'Cancelado',
-];
 
 export function BudgetModal({
   isOpen,
@@ -73,6 +65,7 @@ export function BudgetModal({
   const [photos, setPhotos] = useState<VehiclePhoto[]>(initialBudget?.photos || []);
 
   // UI state
+  const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
   const [isCameraModalOpen, setIsCameraModalOpen] = useState(false);
   const [previewPhoto, setPreviewPhoto] = useState<VehiclePhoto | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -201,10 +194,12 @@ export function BudgetModal({
             </div>
             <div>
               <h2 className="text-lg md:text-xl font-black tracking-tight text-black dark:text-white">
-                {initialBudget ? 'Editar Orçamento' : 'Novo Orçamento de Pintura'}
+                {initialBudget ? 'Alterar Andamento do Serviço & Orçamento' : 'Novo Orçamento de Pintura'}
               </h2>
               <p className="text-xs font-bold text-black dark:text-zinc-400">
-                JL Automotive • Preencha os dados e gere o orçamento profissional
+                {initialBudget
+                  ? 'Atualize as descrições de avarias, fotos e o status até a conclusão'
+                  : 'JL Automotive • Preencha os dados e gere o orçamento profissional'}
               </p>
             </div>
           </div>
@@ -487,28 +482,130 @@ export function BudgetModal({
               </div>
             </div>
 
-            {/* Status Iniciais */}
-            <div>
+            {/* Status Iniciais com bolinha de cada cor em frente de cada descrição */}
+            <div className="relative">
               <label className={`block text-xs font-black mb-1 ${
                 isLight ? 'text-black' : 'text-zinc-300'
               }`}>
-                Status Inicial
+                Status Inicial <span className="text-[10px] font-normal opacity-80">(com cor identificadora)</span>
               </label>
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value as BudgetStatus)}
-                className={`w-full px-3.5 py-2.5 rounded-xl text-sm font-bold border focus:outline-hidden transition-all ${
+
+              {/* Botão do seletor que abre as opções */}
+              <button
+                type="button"
+                onClick={() => setIsStatusDropdownOpen((prev) => !prev)}
+                className={`w-full px-3.5 py-2.5 rounded-xl text-sm font-bold border flex items-center justify-between transition-all ${
                   isLight
-                    ? 'bg-white border-zinc-400 focus:border-cyan-600 focus:ring-2 focus:ring-cyan-200 text-black'
+                    ? 'bg-white border-zinc-400 focus:border-cyan-600 focus:ring-2 focus:ring-cyan-200 text-black shadow-xs'
                     : 'bg-zinc-800/80 border-zinc-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-950 text-white'
                 }`}
               >
-                {STATUS_OPTIONS.map((st) => (
-                  <option key={st} value={st}>
-                    {st}
-                  </option>
-                ))}
-              </select>
+                <div className="flex items-center gap-2.5">
+                  <span
+                    className={`w-3.5 h-3.5 rounded-full ${getStatusConfig(status).dotBg} border ${getStatusConfig(status).dotBorder} ring-2 ${getStatusConfig(status).dotRing} shrink-0`}
+                  />
+                  <span className="font-black">{status}</span>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                    isLight ? getStatusConfig(status).badgeBgLight : getStatusConfig(status).badgeBgDark
+                  }`}>
+                    {getStatusConfig(status).colorName}
+                  </span>
+                </div>
+                <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isStatusDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {/* Dropdown Menu com bolinha de cada cor em frente de cada descrição */}
+              {isStatusDropdownOpen && (
+                <div
+                  className={`absolute left-0 right-0 z-40 mt-1.5 rounded-xl border shadow-2xl p-2 space-y-1.5 animate-in fade-in zoom-in-95 duration-150 ${
+                    isLight
+                      ? 'bg-white border-zinc-300 text-zinc-900 shadow-zinc-400/40'
+                      : 'bg-zinc-900 border-zinc-700 text-zinc-100 shadow-black/80'
+                  }`}
+                >
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 px-2 py-1 border-b border-zinc-100 dark:border-zinc-800">
+                    Selecione o Status Inicial:
+                  </p>
+
+                  <div className="max-h-60 overflow-y-auto space-y-1 pr-1">
+                    {STATUS_OPTIONS.map((st) => {
+                      const cfg = getStatusConfig(st);
+                      const isSelected = st === status;
+                      return (
+                        <button
+                          key={st}
+                          type="button"
+                          onClick={() => {
+                            setStatus(st);
+                            setIsStatusDropdownOpen(false);
+                          }}
+                          className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left text-xs font-bold transition-all ${
+                            isSelected
+                              ? isLight
+                                ? 'bg-cyan-100 text-cyan-950 font-black border border-cyan-300'
+                                : 'bg-emerald-950/70 text-emerald-300 font-black border border-emerald-700/60'
+                              : isLight
+                              ? 'hover:bg-zinc-100 text-black'
+                              : 'hover:bg-zinc-800 text-zinc-200'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <span
+                              className={`w-3.5 h-3.5 rounded-full shrink-0 ${cfg.dotBg} border ${cfg.dotBorder} ring-2 ${cfg.dotRing}`}
+                            />
+                            <span className="font-bold">{st}</span>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <span className={`text-[10px] font-medium hidden sm:inline ${
+                              isLight ? 'text-zinc-600' : 'text-zinc-400'
+                            }`}>
+                              {cfg.description}
+                            </span>
+                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-sm ${
+                              isLight ? cfg.badgeBgLight : cfg.badgeBgDark
+                            }`}>
+                              {cfg.colorName}
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Seletor rápido de Status com as bolinhas coloridas */}
+          <div className="pt-2">
+            <span className={`text-[11px] font-bold block mb-1.5 ${isLight ? 'text-black' : 'text-zinc-400'}`}>
+              Bolinhas de Identificação do Estado do Serviço (clique para selecionar):
+            </span>
+            <div className="flex flex-wrap gap-1.5">
+              {STATUS_OPTIONS.map((st) => {
+                const cfg = getStatusConfig(st);
+                const isSelected = st === status;
+                return (
+                  <button
+                    key={st}
+                    type="button"
+                    onClick={() => setStatus(st)}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border transition-all ${
+                      isSelected
+                        ? isLight
+                          ? 'border-cyan-600 bg-cyan-100 text-cyan-950 ring-2 ring-cyan-400/40 shadow-xs'
+                          : 'border-emerald-500 bg-emerald-950/70 text-emerald-200 ring-2 ring-emerald-500/40 shadow-xs'
+                        : isLight
+                        ? 'border-zinc-300 bg-white hover:bg-zinc-100 text-black'
+                        : 'border-zinc-700 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300'
+                    }`}
+                  >
+                    <span className={`w-3 h-3 rounded-full ${cfg.dotBg} border ${cfg.dotBorder} ring-1 ${cfg.dotRing}`} />
+                    <span>{st}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 

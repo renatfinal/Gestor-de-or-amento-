@@ -5,6 +5,7 @@ import {
   FilePlus,
   ArrowDownLeft,
   ArrowUpRight,
+  Wrench,
 } from 'lucide-react';
 import {
   ActiveTab,
@@ -32,6 +33,7 @@ import { Header } from '@/components/Header';
 import { BottomNav } from '@/components/BottomNav';
 import { CalendarView } from '@/components/CalendarView';
 import { BudgetModal } from '@/components/BudgetModal';
+import { ExistingBudgetsModal } from '@/components/ExistingBudgetsModal';
 import { ClientsView } from '@/components/ClientsView';
 import { FinancialView } from '@/components/FinancialView';
 import { BalanceteView } from '@/components/BalanceteView';
@@ -58,6 +60,7 @@ export default function HomePage() {
 
   // Modals state
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
+  const [isExistingBudgetsModalOpen, setIsExistingBudgetsModalOpen] = useState(false);
   const [budgetToEdit, setBudgetToEdit] = useState<Budget | null>(null);
   const [presetBudgetDate, setPresetBudgetDate] = useState<string | undefined>(undefined);
 
@@ -67,6 +70,11 @@ export default function HomePage() {
   const [presetFinancialType, setPresetFinancialType] = useState<TransactionType | undefined>(
     undefined
   );
+
+  const handleOpenBudgetToEdit = (budget: Budget) => {
+    setBudgetToEdit(budget);
+    setIsBudgetModalOpen(true);
+  };
 
   // Success toast message
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -304,50 +312,67 @@ export default function HomePage() {
             </h2>
           </div>
 
-          {/* Quick Action Shortcuts */}
-          <div className="flex items-center gap-2">
+          {/* Quick Action Shortcuts: com botão EM CIMA do botão + Novo Orçamento */}
+          <div className="flex flex-col items-stretch sm:items-end gap-2">
+            {/* Requirement: E em cima do botão + Novo Orçamento Coloque um botão para abrir o Orçamento que foi feito e para que eu possa alterar as descrições do andamento do serviço ate a conclusão do serviço */}
             <button
               type="button"
-              onClick={() => handleOpenNewBudget()}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black text-white shadow-md transition-all active:scale-98 ${
+              onClick={() => setIsExistingBudgetsModalOpen(true)}
+              className={`flex items-center justify-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-black border transition-all active:scale-98 shadow-xs ${
                 isLight
-                  ? 'bg-cyan-700 hover:bg-cyan-800 shadow-cyan-900/20'
-                  : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/30'
+                  ? 'bg-amber-100 hover:bg-amber-200 text-amber-950 border-amber-300'
+                  : 'bg-amber-950/70 hover:bg-amber-950 text-amber-300 border-amber-700/80'
               }`}
+              title="Abrir orçamento feito para alterar as descrições do andamento do serviço até a conclusão"
             >
-              <FilePlus className="w-4 h-4" />
-              <span>Novo Orçamento</span>
+              <Wrench className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+              <span>Abrir Orçamento (Andamento do Serviço)</span>
             </button>
 
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab('financial');
-              }}
-              className={`hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-colors ${
-                isLight
-                  ? 'border-zinc-400 bg-white hover:bg-zinc-100 text-black shadow-xs'
-                  : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-800 text-zinc-200'
-              }`}
-            >
-              <ArrowDownLeft className="w-3.5 h-3.5 text-emerald-600" />
-              <span>+ Entrada</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => handleOpenNewBudget()}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black text-white shadow-md transition-all active:scale-98 ${
+                  isLight
+                    ? 'bg-cyan-700 hover:bg-cyan-800 shadow-cyan-900/20'
+                    : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/30'
+                }`}
+              >
+                <FilePlus className="w-4 h-4" />
+                <span>+ Novo Orçamento</span>
+              </button>
 
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab('financial');
-              }}
-              className={`hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-colors ${
-                isLight
-                  ? 'border-zinc-400 bg-white hover:bg-zinc-100 text-black shadow-xs'
-                  : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-800 text-zinc-200'
-              }`}
-            >
-              <ArrowUpRight className="w-3.5 h-3.5 text-red-600" />
-              <span>+ Saída</span>
-            </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('financial');
+                }}
+                className={`hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-colors ${
+                  isLight
+                    ? 'border-zinc-400 bg-white hover:bg-zinc-100 text-black shadow-xs'
+                    : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-800 text-zinc-200'
+                }`}
+              >
+                <ArrowDownLeft className="w-3.5 h-3.5 text-emerald-600" />
+                <span>+ Entrada</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('financial');
+                }}
+                className={`hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-colors ${
+                  isLight
+                    ? 'border-zinc-400 bg-white hover:bg-zinc-100 text-black shadow-xs'
+                    : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-800 text-zinc-200'
+                }`}
+              >
+                <ArrowUpRight className="w-3.5 h-3.5 text-red-600" />
+                <span>+ Saída</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -371,6 +396,7 @@ export default function HomePage() {
             onSaveClient={handleSaveClient}
             onDeleteClient={handleDeleteClient}
             onNewBudgetForClient={handleNewBudgetForClient}
+            onOpenBudgetToEdit={handleOpenBudgetToEdit}
             theme={theme}
           />
         )}
@@ -399,7 +425,16 @@ export default function HomePage() {
         theme={theme}
       />
 
-      {/* Novo Orçamento Modal - Keyed so state reinitializes cleanly on open */}
+      {/* Modal para Abrir Orçamento Feito e Alterar Andamento do Serviço */}
+      <ExistingBudgetsModal
+        isOpen={isExistingBudgetsModalOpen}
+        budgets={budgets}
+        onClose={() => setIsExistingBudgetsModalOpen(false)}
+        onSelectBudget={handleOpenBudgetToEdit}
+        theme={theme}
+      />
+
+      {/* Novo Orçamento / Edição de Orçamento Modal */}
       {isBudgetModalOpen && (
         <BudgetModal
           key={budgetToEdit ? budgetToEdit.id : presetBudgetDate || 'new-budget'}

@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { Client, Budget } from '@/lib/types';
 import { formatPhone } from '@/lib/formatters';
+import { getStatusConfig, STATUS_OPTIONS } from '@/lib/statusConfig';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
 
 interface ClientsViewProps {
@@ -24,6 +25,7 @@ interface ClientsViewProps {
   onSaveClient: (client: Client) => void;
   onDeleteClient: (clientId: string) => void;
   onNewBudgetForClient: (client: Client) => void;
+  onOpenBudgetToEdit?: (budget: Budget) => void;
   theme: 'light-cyan' | 'dark-spring';
 }
 
@@ -33,6 +35,7 @@ export function ClientsView({
   onSaveClient,
   onDeleteClient,
   onNewBudgetForClient,
+  onOpenBudgetToEdit,
   theme,
 }: ClientsViewProps) {
   const isLight = theme === 'light-cyan';
@@ -167,6 +170,33 @@ export function ClientsView({
           />
           <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 top-3" />
         </div>
+
+        {/* Status Colors Legend */}
+        <div className="mt-3.5 pt-3 border-t border-zinc-200 dark:border-zinc-800">
+          <div className="flex items-center gap-1.5 mb-2">
+            <span className="text-[11px] font-black uppercase tracking-wider text-zinc-600 dark:text-zinc-400">
+              Legenda do Estado do Serviço (Bolinha abaixo da lixeira):
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-1.5 text-xs font-bold">
+            {STATUS_OPTIONS.map((st) => {
+              const cfg = getStatusConfig(st);
+              return (
+                <div
+                  key={st}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[11px] ${
+                    isLight ? cfg.badgeBgLight : cfg.badgeBgDark
+                  }`}
+                >
+                  <span
+                    className={`w-2.5 h-2.5 rounded-full ${cfg.dotBg} border ${cfg.dotBorder} ring-1 ${cfg.dotRing} shrink-0`}
+                  />
+                  <span>{st}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       {/* Clients Grid / List (Ordem Alfabética) */}
@@ -189,13 +219,17 @@ export function ClientsView({
           </div>
         ) : (
           filteredClients.map((client) => {
-            // Find budgets for this client
-            const clientBudgets = budgets.filter(
-              (b) =>
-                b.clientName.toLowerCase() === client.name.toLowerCase() ||
-                (client.phone && b.phone === client.phone)
-            );
+            // Find budgets for this client (most recent first)
+            const clientBudgets = budgets
+              .filter(
+                (b) =>
+                  b.clientName.toLowerCase() === client.name.toLowerCase() ||
+                  (client.phone && b.phone === client.phone)
+              )
+              .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
+            const latestBudget = clientBudgets[0];
+            const latestConfig = latestBudget ? getStatusConfig(latestBudget.status) : null;
             const cleanPhone = client.phone.replace(/\D/g, '');
 
             return (
@@ -231,24 +265,54 @@ export function ClientsView({
                       </div>
                     </div>
 
-                    {/* Options: Editar nome a nome & Excluir */}
-                    <div className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => handleOpenEditor(client)}
-                        title="Editar Cliente"
-                        className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-                      >
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setClientToDelete(client.id)}
-                        title="Excluir Cliente"
-                        className="p-1.5 rounded-lg text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                    {/* Options: Editar nome a nome & Excluir, e embaixo da lixeira a bolinha na cor da descrição */}
+                    <div className="flex flex-col items-end gap-1.5 shrink-0">
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditor(client)}
+                          title="Editar Cliente"
+                          className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setClientToDelete(client.id)}
+                          title="Excluir Cliente"
+                          className="p-1.5 rounded-lg text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                      {/* Requirement: Na pagina Clientes em baixo da lixeira aparecera essa bolinha na cor da descrição */}
+                      {latestBudget && latestConfig ? (
+                        <button
+                          type="button"
+                          onClick={() => onOpenBudgetToEdit?.(latestBudget)}
+                          title={`Estado do Serviço: ${latestBudget.status} (${latestConfig.colorName}) - Clique para abrir o orçamento e alterar o andamento`}
+                          className={`group flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black border transition-all hover:scale-105 active:scale-95 shadow-xs ${
+                            isLight
+                              ? 'bg-white border-zinc-300 hover:border-zinc-500 text-zinc-900'
+                              : 'bg-zinc-800 border-zinc-700 hover:border-zinc-500 text-zinc-100'
+                          }`}
+                        >
+                          {/* Bolinha na cor da descrição */}
+                          <span
+                            className={`w-3.5 h-3.5 rounded-full ${latestConfig.dotBg} border ${latestConfig.dotBorder} ring-2 ${latestConfig.dotRing} shrink-0`}
+                          />
+                          <span className="truncate max-w-[85px]">{latestBudget.status}</span>
+                        </button>
+                      ) : (
+                        <div
+                          title="Sem orçamento cadastrado para este cliente"
+                          className="flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-medium text-zinc-400 border border-dashed border-zinc-300 dark:border-zinc-700"
+                        >
+                          <span className="w-2 h-2 rounded-full bg-zinc-300 dark:bg-zinc-600" />
+                          <span>Sem serviço</span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -269,10 +333,25 @@ export function ClientsView({
 
                   {/* Budgets Count Badge & List preview */}
                   <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-xs">
-                    <span className="text-zinc-500 flex items-center gap-1">
-                      <FileText className="w-3.5 h-3.5 text-zinc-400" />
-                      {clientBudgets.length} orçamento(s)
-                    </span>
+                    {latestBudget ? (
+                      <button
+                        type="button"
+                        onClick={() => onOpenBudgetToEdit?.(latestBudget)}
+                        className={`text-xs font-bold flex items-center gap-1.5 hover:underline ${
+                          isLight ? 'text-cyan-800' : 'text-emerald-400'
+                        }`}
+                        title="Clique para abrir e alterar o andamento do serviço"
+                      >
+                        <FileText className="w-3.5 h-3.5 text-zinc-400" />
+                        <span>{clientBudgets.length} orçamento(s)</span>
+                        <span className="text-[10px] opacity-75 font-normal">(abrir)</span>
+                      </button>
+                    ) : (
+                      <span className="text-zinc-500 flex items-center gap-1">
+                        <FileText className="w-3.5 h-3.5 text-zinc-400" />
+                        {clientBudgets.length} orçamento(s)
+                      </span>
+                    )}
 
                     {cleanPhone.length >= 10 && (
                       <a
