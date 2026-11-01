@@ -165,12 +165,20 @@ export function BudgetModal({
     }
   };
 
+  // Helper to ensure input scrolls smoothly into view when mobile keyboard appears
+  const handleInputFocus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const target = e.target;
+    setTimeout(() => {
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 250);
+  };
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-3 md:p-6 overflow-y-auto animate-in fade-in duration-150">
+    <div className="fixed inset-0 z-50 flex flex-col justify-start sm:justify-center items-center bg-black/75 backdrop-blur-xs p-2 sm:p-6 overflow-y-auto overscroll-contain animate-in fade-in duration-150">
       <div
-        className={`relative w-full max-w-4xl my-auto rounded-2xl md:rounded-3xl shadow-2xl border overflow-hidden flex flex-col max-h-[92vh] ${
+        className={`relative w-full max-w-4xl my-auto rounded-2xl md:rounded-3xl shadow-2xl border overflow-hidden flex flex-col max-h-[92dvh] sm:max-h-[92vh] ${
           isLight
             ? 'bg-white border-zinc-300 text-black'
             : 'bg-zinc-900 border-zinc-800 text-zinc-100'
@@ -240,7 +248,7 @@ export function BudgetModal({
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
+              <div className="scroll-mt-24">
                 <label className="block text-xs font-black mb-1 text-black dark:text-zinc-300">
                   Nome do Cliente <span className="text-red-500">*</span>
                 </label>
@@ -249,19 +257,20 @@ export function BudgetModal({
                     type="text"
                     required
                     value={clientName}
+                    onFocus={handleInputFocus}
                     onChange={(e) => setClientName(e.target.value)}
                     placeholder="Ex: João da Silva Sauro"
-                    className={`w-full pl-9 pr-3.5 py-2.5 rounded-xl text-sm font-bold border focus:outline-hidden transition-all ${
+                    className={`w-full pl-9 pr-3.5 py-3 sm:py-2.5 rounded-xl text-base sm:text-sm font-bold border focus:outline-hidden transition-all ${
                       isLight
                         ? 'bg-white border-zinc-400 focus:border-cyan-600 focus:ring-2 focus:ring-cyan-200 text-black placeholder:text-zinc-500'
                         : 'bg-zinc-800/80 border-zinc-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-950 text-white'
                     }`}
                   />
-                  <User className="w-4 h-4 text-black dark:text-zinc-400 absolute left-3 top-3" />
+                  <User className="w-4 h-4 text-black dark:text-zinc-400 absolute left-3 top-3.5 sm:top-3" />
                 </div>
               </div>
 
-              <div>
+              <div className="scroll-mt-24">
                 <label className="block text-xs font-black mb-1 text-black dark:text-zinc-300">
                   Telefone (WhatsApp)
                 </label>
@@ -270,15 +279,16 @@ export function BudgetModal({
                     type="tel"
                     inputMode="tel"
                     value={phone}
+                    onFocus={handleInputFocus}
                     onChange={handlePhoneChange}
                     placeholder="(XX) XXXXX-XXXX"
-                    className={`w-full pl-9 pr-3.5 py-2.5 rounded-xl text-sm border focus:outline-hidden transition-all font-mono font-bold ${
+                    className={`w-full pl-9 pr-3.5 py-3 sm:py-2.5 rounded-xl text-base sm:text-sm border focus:outline-hidden transition-all font-mono font-bold ${
                       isLight
                         ? 'bg-white border-zinc-400 focus:border-cyan-600 focus:ring-2 focus:ring-cyan-200 text-black placeholder:text-zinc-500'
                         : 'bg-zinc-800/80 border-zinc-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-950 text-white'
                     }`}
                   />
-                  <Phone className="w-4 h-4 text-black dark:text-zinc-400 absolute left-3 top-3" />
+                  <Phone className="w-4 h-4 text-black dark:text-zinc-400 absolute left-3 top-3.5 sm:top-3" />
                 </div>
               </div>
             </div>

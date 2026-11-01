@@ -6,6 +6,7 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   Wrench,
+  CheckCircle2,
 } from 'lucide-react';
 import {
   ActiveTab,
@@ -22,6 +23,10 @@ import {
   getStoredProfile,
   getStoredTheme,
   getStoredTransactions,
+  getStoredSession,
+  saveStoredSession,
+  clearStoredSession,
+  AuthSession,
   saveStoredBudgets,
   saveStoredClients,
   saveStoredProfile,
@@ -38,6 +43,7 @@ import { ClientsView } from '@/components/ClientsView';
 import { FinancialView } from '@/components/FinancialView';
 import { BalanceteView } from '@/components/BalanceteView';
 import { ProfileModal } from '@/components/ProfileModal';
+import { LoginPage } from '@/components/LoginPage';
 
 export default function HomePage() {
   const mounted = React.useSyncExternalStore(
@@ -65,6 +71,16 @@ export default function HomePage() {
   const [presetBudgetDate, setPresetBudgetDate] = useState<string | undefined>(undefined);
 
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isFirstAccessModalOpen, setIsFirstAccessModalOpen] = useState(false);
+
+  // Authentication Session
+  const [session, setSession] = useState<AuthSession | null>(() => getStoredSession());
+
+  const handleLogout = () => {
+    clearStoredSession();
+    setSession(null);
+    showToast('Sessão encerrada com sucesso.');
+  };
 
   const [presetFinancialDate, setPresetFinancialDate] = useState<string | undefined>(undefined);
   const [presetFinancialType, setPresetFinancialType] = useState<TransactionType | undefined>(
@@ -276,6 +292,65 @@ export default function HomePage() {
     );
   }
 
+  if (!session) {
+    return (
+      <>
+        <LoginPage
+          theme={theme}
+          onToggleTheme={handleToggleTheme}
+          profile={profile}
+          onLoginSuccess={(newSession) => {
+            setSession(newSession);
+            saveStoredSession(newSession);
+            showToast(`Bem-vindo ao JL Automotive, ${profile.name || 'Usuário'}!`);
+          }}
+          onOpenFirstAccess={() => setIsFirstAccessModalOpen(true)}
+        />
+
+        {/* Modal de Primeiro Acesso */}
+        {isFirstAccessModalOpen && (
+          <ProfileModal
+            key="first-access-modal"
+            isOpen={isFirstAccessModalOpen}
+            profile={profile}
+            onSaveProfile={(updatedProfile) => {
+              handleSaveProfile(updatedProfile);
+              const newSession: AuthSession = {
+                email: updatedProfile.email || 'jl.automotive@gmail.com',
+                name: updatedProfile.name || 'JL Automotive',
+                loggedInAt: new Date().toISOString(),
+              };
+              setSession(newSession);
+              saveStoredSession(newSession);
+              showToast(`Perfil cadastrado com sucesso! Bem-vindo(a) ao JL Automotive.`);
+            }}
+            onClose={() => setIsFirstAccessModalOpen(false)}
+            theme={theme}
+            isFirstAccess={true}
+            onFirstAccessSuccess={(updatedProfile) => {
+              const newSession: AuthSession = {
+                email: updatedProfile.email || 'jl.automotive@gmail.com',
+                name: updatedProfile.name || 'JL Automotive',
+                loggedInAt: new Date().toISOString(),
+              };
+              setSession(newSession);
+              saveStoredSession(newSession);
+              showToast(`Perfil cadastrado com sucesso! Bem-vindo(a) ao JL Automotive.`);
+            }}
+          />
+        )}
+
+        {/* Toast feedback */}
+        {toastMessage && (
+          <div className="fixed bottom-6 right-6 z-50 bg-emerald-500 text-black px-4 py-3 rounded-2xl shadow-xl flex items-center gap-2.5 font-bold text-xs animate-in slide-in-from-bottom-2">
+            <CheckCircle2 className="w-4 h-4 shrink-0 text-black" />
+            <span>{toastMessage}</span>
+          </div>
+        )}
+      </>
+    );
+  }
+
   return (
     <div
       className={`min-h-screen transition-colors flex flex-col pb-28 ${
@@ -287,6 +362,7 @@ export default function HomePage() {
         theme={theme}
         onToggleTheme={handleToggleTheme}
         onOpenProfile={() => setIsProfileModalOpen(true)}
+        onLogout={handleLogout}
         profile={profile}
         totalBudgets={budgets.length}
       />

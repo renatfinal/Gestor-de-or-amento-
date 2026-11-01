@@ -13,10 +13,38 @@ import {
   CheckCircle2,
   Clock,
   Filter,
+  CreditCard,
+  Banknote,
+  QrCode,
+  FileText,
+  MoreHorizontal,
+  ChevronDown,
+  Check,
+  Wallet,
 } from 'lucide-react';
 import { FinancialTransaction, TransactionType } from '@/lib/types';
 import { formatBRL, formatCurrencyInput, isoToBrDate } from '@/lib/formatters';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
+
+// Requirement: Opções de pagamentos: Pix, Cartão Crédito, Cartão Débito, Dinheiro, Cheque, Outros
+export const PAYMENT_OPTIONS = [
+  { name: 'Pix', icon: <QrCode className="w-4 h-4 text-teal-500" />, bgClass: 'bg-teal-500/10' },
+  { name: 'Cartão Crédito', icon: <CreditCard className="w-4 h-4 text-blue-500" />, bgClass: 'bg-blue-500/10' },
+  { name: 'Cartão Débito', icon: <CreditCard className="w-4 h-4 text-indigo-500" />, bgClass: 'bg-indigo-500/10' },
+  { name: 'Dinheiro', icon: <Banknote className="w-4 h-4 text-emerald-500" />, bgClass: 'bg-emerald-500/10' },
+  { name: 'Cheque', icon: <FileText className="w-4 h-4 text-amber-500" />, bgClass: 'bg-amber-500/10' },
+  { name: 'Outros', icon: <MoreHorizontal className="w-4 h-4 text-zinc-400" />, bgClass: 'bg-zinc-500/10' },
+] as const;
+
+function getPaymentMethodIcon(method?: string) {
+  const m = (method || '').toLowerCase();
+  if (m.includes('pix')) return <QrCode className="w-3.5 h-3.5 text-teal-500 shrink-0" />;
+  if (m.includes('crédito') || m.includes('credito')) return <CreditCard className="w-3.5 h-3.5 text-blue-500 shrink-0" />;
+  if (m.includes('débito') || m.includes('debito')) return <CreditCard className="w-3.5 h-3.5 text-indigo-500 shrink-0" />;
+  if (m.includes('dinheiro')) return <Banknote className="w-3.5 h-3.5 text-emerald-500 shrink-0" />;
+  if (m.includes('cheque')) return <FileText className="w-3.5 h-3.5 text-amber-500 shrink-0" />;
+  return <MoreHorizontal className="w-3.5 h-3.5 text-zinc-400 shrink-0" />;
+}
 
 interface FinancialViewProps {
   transactions: FinancialTransaction[];
@@ -42,10 +70,11 @@ export function FinancialView({
     presetType || 'all'
   );
 
-  // Month and Year filter for financial entries
+  // Month, Year, and Payment filter for financial entries
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
   const [selectedMonth, setSelectedMonth] = useState<number | 'all'>('all');
+  const [selectedPaymentFilter, setSelectedPaymentFilter] = useState<string>('all');
 
   // Deletion Modal state
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
@@ -53,6 +82,10 @@ export function FinancialView({
   // Editor Modal state
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<FinancialTransaction | null>(null);
+
+  // Payment Picker Modal state (pequena janela)
+  const [isPaymentPickerOpen, setIsPaymentPickerOpen] = useState(false);
+  const [targetTransactionForPayment, setTargetTransactionForPayment] = useState<FinancialTransaction | null>(null);
 
   // Form Fields
   const [formType, setFormType] = useState<TransactionType>('entrada');
@@ -62,12 +95,17 @@ export function FinancialView({
   const [formNumericAmount, setFormNumericAmount] = useState(0);
   const [formDate, setFormDate] = useState(presetDate || new Date().toISOString().slice(0, 10));
   const [formIsPaid, setFormIsPaid] = useState(true);
-  const [formPaymentMethod, setFormPaymentMethod] = useState('PIX');
+  const [formPaymentMethod, setFormPaymentMethod] = useState('Pix');
   const [formError, setFormError] = useState<string | null>(null);
 
   // Filter transactions
   const filteredList = transactions.filter((t) => {
     if (activeSubTab !== 'all' && t.type !== activeSubTab) return false;
+
+    if (selectedPaymentFilter !== 'all') {
+      const pm = (t.paymentMethod || 'Pix').toLowerCase();
+      if (pm !== selectedPaymentFilter.toLowerCase()) return false;
+    }
 
     if (t.date) {
       const [yStr, mStr] = t.date.split('-');
@@ -115,7 +153,7 @@ export function FinancialView({
     setFormNumericAmount(0);
     setFormDate(datePreset || presetDate || new Date().toISOString().slice(0, 10));
     setFormIsPaid(type === 'entrada' ? true : false);
-    setFormPaymentMethod('PIX');
+    setFormPaymentMethod('Pix');
     setFormError(null);
     setIsEditorOpen(true);
   };
@@ -129,9 +167,23 @@ export function FinancialView({
     setFormNumericAmount(item.amount);
     setFormDate(item.date || new Date().toISOString().slice(0, 10));
     setFormIsPaid(item.isPaid);
-    setFormPaymentMethod(item.paymentMethod || 'PIX');
+    setFormPaymentMethod(item.paymentMethod || 'Pix');
     setFormError(null);
     setIsEditorOpen(true);
+  };
+
+  const handleSelectPaymentOption = (chosen: string) => {
+    if (targetTransactionForPayment) {
+      const updatedTx: FinancialTransaction = {
+        ...targetTransactionForPayment,
+        paymentMethod: chosen,
+      };
+      onSaveTransaction(updatedTx);
+      setTargetTransactionForPayment(null);
+    } else {
+      setFormPaymentMethod(chosen);
+    }
+    setIsPaymentPickerOpen(false);
   };
 
   const handleCloseEditor = () => {
@@ -145,6 +197,14 @@ export function FinancialView({
     const { formatted, numeric } = formatCurrencyInput(e.target.value);
     setFormAmountStr(formatted);
     setFormNumericAmount(numeric);
+  };
+
+  // Helper to ensure input scrolls smoothly into view when mobile keyboard appears
+  const handleInputFocus = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const target = e.target;
+    setTimeout(() => {
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 250);
   };
 
   const handleSaveForm = (e: React.FormEvent) => {
@@ -419,6 +479,25 @@ export function FinancialView({
               );
             })}
           </select>
+
+          {/* Filtro por Forma de Pagamento */}
+          <select
+            value={selectedPaymentFilter}
+            onChange={(e) => setSelectedPaymentFilter(e.target.value)}
+            className={`px-3 py-1.5 rounded-xl text-xs font-medium border focus:outline-hidden ${
+              isLight
+                ? 'bg-zinc-50 border-zinc-200 text-zinc-800'
+                : 'bg-zinc-800 border-zinc-700 text-zinc-200'
+            }`}
+          >
+            <option value="all">Todas Formas de Pagamento</option>
+            <option value="Pix">Pix</option>
+            <option value="Cartão Crédito">Cartão Crédito</option>
+            <option value="Cartão Débito">Cartão Débito</option>
+            <option value="Dinheiro">Dinheiro</option>
+            <option value="Cheque">Cheque</option>
+            <option value="Outros">Outros</option>
+          </select>
         </div>
 
         {/* Transactions Table / List */}
@@ -467,12 +546,31 @@ export function FinancialView({
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-3 text-xs text-zinc-400 mt-1">
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs text-zinc-400 mt-1.5">
                         <span className="flex items-center gap-1 font-mono">
                           <Calendar className="w-3 h-3 text-zinc-400" />
                           {isoToBrDate(item.date)}
                         </span>
-                        {item.paymentMethod && <span>• {item.paymentMethod}</span>}
+
+                        {/* Requirement: caixinha com algumas opções de pagamentos ao apertar em cima da caixinha aparece uma pequena janela para escolher a opção */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setTargetTransactionForPayment(item);
+                            setIsPaymentPickerOpen(true);
+                          }}
+                          title="Alterar Opção de Pagamento"
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-[11px] font-bold border transition-all cursor-pointer ${
+                            isLight
+                              ? 'bg-cyan-50/80 border-cyan-200 text-cyan-950 hover:bg-cyan-100 hover:border-cyan-300'
+                              : 'bg-zinc-800/90 border-zinc-700 text-zinc-200 hover:bg-zinc-700 hover:border-zinc-500'
+                          }`}
+                        >
+                          {getPaymentMethodIcon(item.paymentMethod || 'Pix')}
+                          <span>{item.paymentMethod || 'Pix'}</span>
+                          <ChevronDown className="w-3 h-3 text-zinc-400" />
+                        </button>
+
                         {item.clientName && <span>• {item.clientName}</span>}
                       </div>
                     </div>
@@ -546,63 +644,67 @@ export function FinancialView({
 
       {/* Modal de Criação / Edição de Entrada ou Saída com X para fechar */}
       {isEditorOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-50 flex flex-col justify-start sm:justify-center items-center bg-black/75 backdrop-blur-xs p-2 sm:p-4 overflow-y-auto overscroll-contain animate-in fade-in duration-150">
           <div
-            className={`relative w-full max-w-md rounded-2xl shadow-2xl border p-6 ${
+            className={`relative w-full max-w-md rounded-2xl sm:rounded-3xl shadow-2xl border flex flex-col max-h-[92dvh] sm:max-h-[88vh] my-auto transition-all ${
               isLight
-                ? 'bg-white border-zinc-200 text-zinc-900'
-                : 'bg-zinc-900 border-zinc-800 text-zinc-100'
+                ? 'bg-white border-zinc-200 text-zinc-900 shadow-cyan-950/15'
+                : 'bg-zinc-900 border-zinc-800 text-zinc-100 shadow-black'
             }`}
           >
             {/* Requirement: Com X para fechar */}
             <button
               onClick={handleCloseEditor}
               type="button"
-              className="absolute top-4 right-4 p-1.5 rounded-full text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+              className="absolute top-4 right-4 z-20 p-2 rounded-full text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
               title="Fechar (X)"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <div className="flex items-center gap-2.5 mb-5">
-              <div
-                className={`p-2.5 rounded-xl ${
-                  formType === 'entrada'
-                    ? 'bg-emerald-100 text-emerald-700'
-                    : 'bg-red-100 text-red-700'
-                }`}
-              >
-                {formType === 'entrada' ? (
-                  <ArrowDownLeft className="w-5 h-5" />
-                ) : (
-                  <ArrowUpRight className="w-5 h-5" />
-                )}
+            {/* Pinned Header */}
+            <div className="p-4 sm:p-6 pb-3 border-b border-zinc-100 dark:border-zinc-800/80 shrink-0 pr-10">
+              <div className="flex items-center gap-2.5">
+                <div
+                  className={`p-2.5 rounded-xl shrink-0 ${
+                    formType === 'entrada'
+                      ? 'bg-emerald-100 text-emerald-700'
+                      : 'bg-red-100 text-red-700'
+                  }`}
+                >
+                  {formType === 'entrada' ? (
+                    <ArrowDownLeft className="w-5 h-5" />
+                  ) : (
+                    <ArrowUpRight className="w-5 h-5" />
+                  )}
+                </div>
+                <div>
+                  <h3 className="font-bold text-base sm:text-lg">
+                    {editingItem ? 'Editar Lançamento' : `Nova ${formType === 'entrada' ? 'Entrada' : 'Saída'}`}
+                  </h3>
+                  <p className="text-[11px] sm:text-xs text-zinc-500">
+                    {formType === 'entrada'
+                      ? 'Registro de recebimentos da oficina'
+                      : 'Registro de despesas e compras de materiais'}
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-bold text-lg">
-                  {editingItem ? 'Editar Lançamento' : `Nova ${formType === 'entrada' ? 'Entrada' : 'Saída'}`}
-                </h3>
-                <p className="text-xs text-zinc-500">
-                  {formType === 'entrada'
-                    ? 'Registro de recebimentos da oficina'
-                    : 'Registro de despesas e compras de materiais'}
-                </p>
-              </div>
-            </div>
 
-            <form onSubmit={handleSaveForm} className="space-y-4">
               {formError && (
-                <div className="p-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-xs">
+                <div className="mt-3 p-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-xs">
                   {formError}
                 </div>
               )}
+            </div>
 
+            {/* Scrollable Form Body */}
+            <form onSubmit={handleSaveForm} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 overscroll-contain">
               {/* Type Switcher */}
-              <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-zinc-100 dark:bg-zinc-800">
+              <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-zinc-100 dark:bg-zinc-800 shrink-0">
                 <button
                   type="button"
                   onClick={() => setFormType('entrada')}
-                  className={`py-2 rounded-lg text-xs font-bold transition-all ${
+                  className={`py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     formType === 'entrada'
                       ? 'bg-emerald-600 text-white shadow-xs'
                       : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
@@ -613,7 +715,7 @@ export function FinancialView({
                 <button
                   type="button"
                   onClick={() => setFormType('saida')}
-                  className={`py-2 rounded-lg text-xs font-bold transition-all ${
+                  className={`py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     formType === 'saida'
                       ? 'bg-red-600 text-white shadow-xs'
                       : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
@@ -623,7 +725,8 @@ export function FinancialView({
                 </button>
               </div>
 
-              <div>
+              {/* Descrição do Lançamento */}
+              <div className="scroll-mt-24">
                 <label className="block text-xs font-semibold mb-1 text-zinc-700 dark:text-zinc-300">
                   Descrição do Lançamento <span className="text-red-500">*</span>
                 </label>
@@ -631,28 +734,29 @@ export function FinancialView({
                   type="text"
                   required
                   value={formDescription}
+                  onFocus={handleInputFocus}
                   onChange={(e) => setFormDescription(e.target.value)}
                   placeholder={
                     formType === 'entrada'
                       ? 'Ex: Sinal 50% Pintura HB20'
                       : 'Ex: Compra de tintas e verniz na distribuidora'
                   }
-                  className={`w-full px-3.5 py-2.5 rounded-xl text-sm border focus:outline-hidden transition-all ${
+                  className={`w-full px-3.5 py-3 sm:py-2.5 rounded-xl text-base sm:text-sm border focus:outline-hidden transition-all ${
                     isLight
-                      ? 'bg-zinc-50 border-zinc-300 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200'
+                      ? 'bg-zinc-50 border-zinc-300 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 text-zinc-900'
                       : 'bg-zinc-800/80 border-zinc-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-950 text-white'
                   }`}
                 />
               </div>
 
               {/* Requirement: Com valor quando digitar os números ja separar com vírgula e ponto ex 0.000,00 */}
-              <div>
+              <div className="scroll-mt-24">
                 <label className="block text-xs font-semibold mb-1 text-zinc-700 dark:text-zinc-300 flex items-center justify-between">
                   <span>Valor (R$)</span>
                   <span className="text-[10px] text-zinc-400">Ex: 0.000,00 automático</span>
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3.5 top-2.5 text-sm font-bold text-zinc-400">
+                  <span className="absolute left-3.5 top-3 sm:top-2.5 text-sm font-bold text-zinc-400">
                     R$
                   </span>
                   <input
@@ -660,9 +764,10 @@ export function FinancialView({
                     inputMode="numeric"
                     required
                     value={formAmountStr}
+                    onFocus={handleInputFocus}
                     onChange={handleAmountInputChange}
                     placeholder="0,00"
-                    className={`w-full pl-10 pr-3.5 py-2.5 rounded-xl text-sm font-mono font-bold border focus:outline-hidden transition-all ${
+                    className={`w-full pl-10 pr-3.5 py-3 sm:py-2.5 rounded-xl text-base sm:text-sm font-mono font-bold border focus:outline-hidden transition-all ${
                       isLight
                         ? 'bg-zinc-50 border-zinc-300 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 text-zinc-900'
                         : 'bg-zinc-800/80 border-zinc-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-950 text-white'
@@ -671,7 +776,7 @@ export function FinancialView({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 scroll-mt-24">
                 <div>
                   <label className="block text-xs font-semibold mb-1 text-zinc-700 dark:text-zinc-300">
                     Data
@@ -680,10 +785,11 @@ export function FinancialView({
                     type="date"
                     required
                     value={formDate}
+                    onFocus={handleInputFocus}
                     onChange={(e) => setFormDate(e.target.value)}
-                    className={`w-full px-3 py-2 rounded-xl text-xs font-medium border focus:outline-hidden ${
+                    className={`w-full px-3 py-2.5 sm:py-2 rounded-xl text-base sm:text-xs font-medium border focus:outline-hidden ${
                       isLight
-                        ? 'bg-zinc-50 border-zinc-300 focus:border-cyan-500'
+                        ? 'bg-zinc-50 border-zinc-300 focus:border-cyan-500 text-zinc-900'
                         : 'bg-zinc-800 border-zinc-700 focus:border-emerald-500 text-white'
                     }`}
                   />
@@ -696,19 +802,48 @@ export function FinancialView({
                   <input
                     type="text"
                     value={formCategory}
+                    onFocus={handleInputFocus}
                     onChange={(e) => setFormCategory(e.target.value)}
                     placeholder="Ex: Tintas, Peças, Sinal"
-                    className={`w-full px-3 py-2 rounded-xl text-xs font-medium border focus:outline-hidden ${
+                    className={`w-full px-3 py-2.5 sm:py-2 rounded-xl text-base sm:text-xs font-medium border focus:outline-hidden ${
                       isLight
-                        ? 'bg-zinc-50 border-zinc-300 focus:border-cyan-500'
+                        ? 'bg-zinc-50 border-zinc-300 focus:border-cyan-500 text-zinc-900'
                         : 'bg-zinc-800 border-zinc-700 focus:border-emerald-500 text-white'
                     }`}
                   />
                 </div>
               </div>
 
+              {/* Requirement: caixinha com algumas opções de pagamentos ao apertar em cima da caixinha aparece uma pequena janela para escolher a opção */}
+              <div className="scroll-mt-24">
+                <label className="block text-xs font-semibold mb-1 text-zinc-700 dark:text-zinc-300">
+                  Opção de Pagamento
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTargetTransactionForPayment(null);
+                    setIsPaymentPickerOpen(true);
+                  }}
+                  className={`w-full flex items-center justify-between px-3.5 py-3 sm:py-2.5 rounded-xl border text-base sm:text-sm font-semibold transition-all cursor-pointer ${
+                    isLight
+                      ? 'bg-zinc-50 border-zinc-300 hover:border-cyan-500 text-zinc-900'
+                      : 'bg-zinc-800/80 border-zinc-700 hover:border-emerald-500 text-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    {getPaymentMethodIcon(formPaymentMethod)}
+                    <span>{formPaymentMethod || 'Pix'}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs text-zinc-400">
+                    <span>Alterar</span>
+                    <ChevronDown className="w-4 h-4" />
+                  </div>
+                </button>
+              </div>
+
               {/* Requirement: colocar opção para listar como pago */}
-              <div className="flex items-center justify-between p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/40">
+              <div className="flex items-center justify-between p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/40 scroll-mt-24 pb-4">
                 <div>
                   <p className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
                     Status do Pagamento
@@ -728,12 +863,12 @@ export function FinancialView({
                 </label>
               </div>
 
-              {/* Save & Cancel */}
-              <div className="pt-3 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-end gap-2.5">
+              {/* Pinned Footer inside the form */}
+              <div className="pt-3 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-end gap-2.5 shrink-0 bg-inherit">
                 <button
                   type="button"
                   onClick={handleCloseEditor}
-                  className={`px-4 py-2.5 rounded-xl text-xs font-semibold border transition-colors ${
+                  className={`px-4 py-2.5 rounded-xl text-xs font-semibold border transition-colors cursor-pointer ${
                     isLight
                       ? 'border-zinc-300 text-zinc-700 hover:bg-zinc-100'
                       : 'border-zinc-700 text-zinc-300 hover:bg-zinc-800'
@@ -743,7 +878,7 @@ export function FinancialView({
                 </button>
                 <button
                   type="submit"
-                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white shadow-md transition-all active:scale-98 ${
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white shadow-md transition-all active:scale-98 cursor-pointer ${
                     formType === 'entrada'
                       ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/30'
                       : 'bg-red-600 hover:bg-red-700 shadow-red-600/30'
@@ -754,6 +889,96 @@ export function FinancialView({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* Requirement: ao apertar em cima da caixinha aparece uma pequena janela   */}
+      {/* para escolher a opção: Pix, Cartão Crédito, Cartão Débito, Dinheiro,     */}
+      {/* Cheque, Outros                                                           */}
+      {/* ========================================================================= */}
+      {isPaymentPickerOpen && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+          <div
+            className={`relative w-full max-w-xs sm:max-w-sm rounded-2xl shadow-2xl border p-5 transition-all ${
+              isLight
+                ? 'bg-white border-zinc-200 text-zinc-900 shadow-cyan-950/15'
+                : 'bg-zinc-900 border-zinc-800 text-white shadow-black'
+            }`}
+          >
+            {/* Fechar com X */}
+            <button
+              onClick={() => {
+                setIsPaymentPickerOpen(false);
+                setTargetTransactionForPayment(null);
+              }}
+              type="button"
+              className="absolute top-4 right-4 p-1.5 rounded-full text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer transition-colors"
+              title="Fechar (X)"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            {/* Cabeçalho da pequena janela */}
+            <div className="flex items-center gap-2.5 mb-4 pr-6">
+              <div
+                className={`p-2.5 rounded-xl ${
+                  isLight ? 'bg-cyan-100 text-cyan-800' : 'bg-emerald-950/80 text-emerald-400'
+                }`}
+              >
+                <Wallet className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-base text-zinc-900 dark:text-white">
+                  Opção de Pagamento
+                </h3>
+                <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                  {targetTransactionForPayment
+                    ? `Alterar pagamento de ${targetTransactionForPayment.type === 'entrada' ? 'Entrada' : 'Saída'}`
+                    : 'Selecione a forma de pagamento:'}
+                </p>
+              </div>
+            </div>
+
+            {/* Lista com as 6 opções solicitadas */}
+            <div className="grid grid-cols-1 gap-2">
+              {PAYMENT_OPTIONS.map((opt) => {
+                const currentSelected = targetTransactionForPayment
+                  ? targetTransactionForPayment.paymentMethod || 'Pix'
+                  : formPaymentMethod;
+                const isSelected =
+                  currentSelected?.toLowerCase() === opt.name.toLowerCase();
+
+                return (
+                  <button
+                    key={opt.name}
+                    type="button"
+                    onClick={() => handleSelectPaymentOption(opt.name)}
+                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold border transition-all cursor-pointer text-left ${
+                      isSelected
+                        ? isLight
+                          ? 'bg-cyan-50 border-cyan-500 text-cyan-900 shadow-xs ring-1 ring-cyan-400'
+                          : 'bg-emerald-950/40 border-emerald-500 text-emerald-300 shadow-xs ring-1 ring-emerald-400'
+                        : isLight
+                        ? 'bg-zinc-50 border-zinc-200 hover:bg-zinc-100 text-zinc-800'
+                        : 'bg-zinc-800/70 border-zinc-700/80 hover:bg-zinc-800 text-zinc-200'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className={`p-1.5 rounded-lg ${opt.bgClass}`}>
+                        {opt.icon}
+                      </div>
+                      <span>{opt.name}</span>
+                    </div>
+
+                    {isSelected && (
+                      <Check className={`w-4 h-4 ${isLight ? 'text-cyan-700' : 'text-emerald-400'}`} />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}

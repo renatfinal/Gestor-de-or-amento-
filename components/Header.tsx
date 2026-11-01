@@ -5,9 +5,8 @@ import {
   Sun,
   Moon,
   User,
-  Wrench,
-  Palette,
   Car,
+  LogOut,
 } from 'lucide-react';
 import { ThemeMode, UserProfile } from '@/lib/types';
 
@@ -15,6 +14,7 @@ interface HeaderProps {
   theme: ThemeMode;
   onToggleTheme: () => void;
   onOpenProfile: () => void;
+  onLogout?: () => void;
   profile: UserProfile;
   totalBudgets: number;
 }
@@ -23,6 +23,7 @@ export function Header({
   theme,
   onToggleTheme,
   onOpenProfile,
+  onLogout,
   profile,
   totalBudgets,
 }: HeaderProps) {
@@ -125,6 +126,23 @@ export function Header({
               {profile.name.split(' ')[0] || 'Perfil'}
             </span>
           </button>
+
+          {/* Logout / Sair button */}
+          {onLogout && (
+            <button
+              type="button"
+              onClick={onLogout}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                isLight
+                  ? 'border-red-200 bg-red-50/70 text-red-700 hover:bg-red-100'
+                  : 'border-red-900/40 bg-red-950/20 text-red-400 hover:bg-red-950/40 hover:border-red-800/60'
+              }`}
+              title="Sair do aplicativo / Bloquear tela"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span className="hidden md:inline">Sair</span>
+            </button>
+          )}
         </div>
       </div>
     </header>

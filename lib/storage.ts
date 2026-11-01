@@ -442,3 +442,39 @@ export function saveStoredProfile(profile: UserProfile) {
     console.error('Error saving profile:', err);
   }
 }
+
+export interface AuthSession {
+  email: string;
+  name: string;
+  loggedInAt: string;
+}
+
+export function getStoredSession(): AuthSession | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const item = localStorage.getItem('jl_automotive_session_v1');
+    if (!item) return null;
+    return JSON.parse(item);
+  } catch {
+    return null;
+  }
+}
+
+export function saveStoredSession(session: AuthSession) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem('jl_automotive_session_v1', JSON.stringify(session));
+  } catch (err) {
+    console.error('Error saving session:', err);
+  }
+}
+
+export function clearStoredSession() {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.removeItem('jl_automotive_session_v1');
+  } catch (err) {
+    console.error('Error clearing session:', err);
+  }
+}
+
