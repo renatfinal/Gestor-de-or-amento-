@@ -39,6 +39,13 @@ export function formatBRL(amount: number): string {
   });
 }
 
+export function formatCurrency(amount: number): string {
+  return (amount || 0).toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
 /**
  * Formats vehicle license plate:
  * Always UPPERCASE, auto adds hyphen if old pattern, allows Mercosul (BRA2E19)

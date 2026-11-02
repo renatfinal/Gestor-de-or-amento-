@@ -11,16 +11,19 @@ import {
   ArrowUpRight,
   Plus,
 } from 'lucide-react';
-import { Budget, FinancialTransaction } from '@/lib/types';
+import { Budget, FinancialTransaction, CalendarEvent, VehicleChecklist } from '@/lib/types';
 import { DayActionModal } from './DayActionModal';
 
 interface CalendarViewProps {
   budgets: Budget[];
   transactions: FinancialTransaction[];
+  events?: CalendarEvent[];
+  checklists?: VehicleChecklist[];
   onOpenNewBudget: (presetDate?: string) => void;
   onOpenFinancialEntry: (presetDate?: string) => void;
   onOpenFinancialExpense: (presetDate?: string) => void;
   onOpenAddClient: () => void;
+  onOpenEventModal?: (presetDate?: string) => void;
   theme: 'light-cyan' | 'dark-spring';
 }
 
@@ -44,6 +47,8 @@ const WEEK_DAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 export function CalendarView({
   budgets,
   transactions,
+  events = [],
+  checklists = [],
   onOpenNewBudget,
   onOpenFinancialEntry,
   onOpenFinancialExpense,
@@ -323,6 +328,9 @@ export function CalendarView({
               const dayEntries = dayTransactions.filter((t) => t.type === 'entrada');
               const dayExpenses = dayTransactions.filter((t) => t.type === 'saida');
 
+              // Find events/notes on this day
+              const dayEvents = events.filter((ev) => ev.date === dayIso);
+
               return (
                 <div
                   key={`day-${day}`}
@@ -400,6 +408,19 @@ export function CalendarView({
                         <ArrowUpRight className="w-3 h-3 shrink-0 text-red-700" />
                         <span className="truncate">
                           -R$ {dayExpenses.reduce((acc, e) => acc + e.amount, 0).toLocaleString('pt-BR')}
+                        </span>
+                      </div>
+                    )}
+
+                    {dayEvents.length > 0 && (
+                      <div className={`flex items-center gap-1 text-[10px] font-black px-1.5 py-0.5 rounded-md truncate ${
+                        isLight
+                          ? 'bg-amber-100 text-amber-950 border border-amber-300'
+                          : 'bg-amber-500/15 text-amber-300'
+                      }`}>
+                        <CalendarIcon className="w-3 h-3 shrink-0 text-amber-600 dark:text-amber-400" />
+                        <span className="truncate">
+                          {dayEvents.length === 1 ? dayEvents[0].title : `${dayEvents.length} notas/eventos`}
                         </span>
                       </div>
                     )}

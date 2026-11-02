@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { ThemeMode, UserProfile } from '@/lib/types';
 import { AuthSession } from '@/lib/storage';
+import { authenticateWithDb, signInWithGoogleOAuth } from '@/lib/cloudSync';
 
 interface LoginPageProps {
   theme: ThemeMode;
@@ -52,8 +53,8 @@ export function LoginPage({
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotSuccess, setForgotSuccess] = useState(false);
 
-  // Handle Login submission
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  // Handle Login submission with Cloud SQL database
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError(null);
 
@@ -67,29 +68,65 @@ export function LoginPage({
 
     setIsLoggingIn(true);
 
-    // Validate credentials against current saved profile or fallback defaults
-    const profileEmail = (profile.email || 'jl.automotive@gmail.com').toLowerCase();
-    const profilePass = profile.password || 'admin';
+    try {
+      const res = await authenticateWithDb({
+        action: 'login',
+        email: cleanEmail,
+        password: cleanPass,
+      });
 
-    // Allow login if matches profile or master demo account
-    const isMasterMatch =
-      cleanEmail === 'jl.automotive@gmail.com' && (cleanPass === 'admin' || cleanPass === profilePass);
-    const isProfileMatch = cleanEmail === profileEmail && cleanPass === profilePass;
-
-    setTimeout(() => {
-      if (isMasterMatch || isProfileMatch || cleanPass === profilePass) {
+      if (res.success && res.user) {
         const session: AuthSession = {
-          email: cleanEmail,
-          name: profile.name || 'JL Automotive',
+          email: res.user.email,
+          name: res.user.name || profile.name || 'JL Automotive',
           loggedInAt: new Date().toISOString(),
         };
         onLoginSuccess(session);
         setIsLoginModalOpen(false);
-      } else {
-        setLoginError('E-mail ou senha incorretos. Verifique suas credenciais ou use "Esqueci minha Senha".');
-        setIsLoggingIn(false);
+        return;
       }
-    }, 400);
+    } catch (dbErr) {
+      console.warn('DB login attempt fallback to local verification:', dbErr);
+    }
+
+    // Fallback local check
+    const profileEmail = (profile.email || 'jl.automotive@gmail.com').toLowerCase();
+    const profilePass = profile.password || 'admin';
+
+    const isMasterMatch =
+      cleanEmail === 'jl.automotive@gmail.com' && (cleanPass === 'admin' || cleanPass === profilePass);
+    const isProfileMatch = cleanEmail === profileEmail && cleanPass === profilePass;
+
+    if (isMasterMatch || isProfileMatch || cleanPass === profilePass) {
+      const session: AuthSession = {
+        email: cleanEmail,
+        name: profile.name || 'JL Automotive',
+        loggedInAt: new Date().toISOString(),
+      };
+      onLoginSuccess(session);
+      setIsLoginModalOpen(false);
+    } else {
+      setLoginError('E-mail ou senha incorretos. Verifique suas credenciais ou use "Esqueci minha Senha".');
+      setIsLoggingIn(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setIsLoggingIn(true);
+    setLoginError(null);
+    try {
+      const result = await signInWithGoogleOAuth();
+      if (result.success && result.session) {
+        onLoginSuccess(result.session);
+        setIsLoginModalOpen(false);
+      } else {
+        setLoginError(result.error || 'Não foi possível autenticar com o Google.');
+      }
+    } catch (err: any) {
+      setLoginError(err?.message || 'Erro no login com Google.');
+    } finally {
+      setIsLoggingIn(false);
+    }
   };
 
   // Quick fill helper for easy testing
@@ -438,6 +475,50 @@ export function LoginPage({
                   Preencher dados
                 </button>
               </div>
+
+              {/* Divisor com opção Google */}
+              <div className="relative my-3">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-zinc-200 dark:border-zinc-800" />
+                </div>
+                <div className="relative flex justify-center text-[10px] uppercase font-bold tracking-wider">
+                  <span className={`px-2 ${isLight ? 'bg-white text-zinc-400' : 'bg-zinc-900 text-zinc-500'}`}>
+                    ou acesse com
+                  </span>
+                </div>
+              </div>
+
+              {/* Botão Entrar com Google (OAuth) */}
+              <button
+                type="button"
+                onClick={handleGoogleLogin}
+                disabled={isLoggingIn}
+                className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold border flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                  isLight
+                    ? 'border-zinc-300 bg-white hover:bg-zinc-50 text-zinc-800 shadow-xs'
+                    : 'border-zinc-700 bg-zinc-800 hover:bg-zinc-750 text-white'
+                }`}
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24">
+                  <path
+                    fill="#4285F4"
+                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                  />
+                  <path
+                    fill="#34A853"
+                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                  />
+                  <path
+                    fill="#FBBC05"
+                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                  />
+                  <path
+                    fill="#EA4335"
+                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                  />
+                </svg>
+                <span>Entrar com Conta Google</span>
+              </button>
 
               {/* Botões da Janela Acessar App */}
               <div className="pt-3 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-end gap-3">

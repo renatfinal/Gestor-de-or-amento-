@@ -1,4 +1,4 @@
-import { Budget, Client, FinancialTransaction, UserProfile, ThemeMode } from './types';
+import { Budget, Client, FinancialTransaction, UserProfile, ThemeMode, CalendarEvent, VehicleChecklist } from './types';
 import { saveBudgetsToIndexedDb, getBudgetsFromIndexedDb } from './imageStorage';
 
 const STORAGE_KEYS = {
@@ -7,6 +7,8 @@ const STORAGE_KEYS = {
   TRANSACTIONS: 'jl_automotive_transactions_v1',
   PROFILE: 'jl_automotive_profile_v1',
   THEME: 'jl_automotive_theme_v1',
+  EVENTS: 'jl_automotive_events_v1',
+  CHECKLISTS: 'jl_automotive_checklists_v1',
 };
 
 const LEGACY_STORAGE_KEYS = {
@@ -475,6 +477,108 @@ export function clearStoredSession() {
     localStorage.removeItem('jl_automotive_session_v1');
   } catch (err) {
     console.error('Error clearing session:', err);
+  }
+}
+
+// Eventos e Notas da Agenda
+const INITIAL_EVENTS: CalendarEvent[] = [
+  {
+    id: 'ev-1',
+    title: 'Entrega Jeep Compass (Polimento final)',
+    description: 'Veículo pronto para o cliente retirar às 17h.',
+    date: '2026-11-05',
+    type: 'entrega',
+    color: '#10b981',
+    completed: false,
+    createdAt: '2026-10-30T10:00:00.000Z',
+  },
+  {
+    id: 'ev-2',
+    title: 'Chegada das peças Polo (Farol e Para-choque)',
+    description: 'Distribuidora confirmou entrega pela manhã.',
+    date: '2026-11-04',
+    type: 'lembrete',
+    color: '#06b6d4',
+    completed: false,
+    createdAt: '2026-10-29T14:00:00.000Z',
+  },
+  {
+    id: 'ev-3',
+    title: 'Nota: Revisão Compressor e Filtros de Cabine',
+    description: 'Agendar troca de óleo do compressor e limpeza dos filtros da cabine de pintura.',
+    date: '2026-11-08',
+    type: 'nota',
+    color: '#f59e0b',
+    completed: false,
+    createdAt: '2026-10-28T09:00:00.000Z',
+  },
+];
+
+export function getStoredEvents(): CalendarEvent[] {
+  if (typeof window === 'undefined') return INITIAL_EVENTS;
+  try {
+    const item = localStorage.getItem(STORAGE_KEYS.EVENTS);
+    if (!item) {
+      localStorage.setItem(STORAGE_KEYS.EVENTS, JSON.stringify(INITIAL_EVENTS));
+      return INITIAL_EVENTS;
+    }
+    return JSON.parse(item);
+  } catch (err) {
+    console.error('Error reading events:', err);
+    return INITIAL_EVENTS;
+  }
+}
+
+export function saveStoredEvents(events: CalendarEvent[]) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(STORAGE_KEYS.EVENTS, JSON.stringify(events));
+  } catch (err) {
+    console.error('Error saving events:', err);
+  }
+}
+
+// Check-lists de Vistoria
+const INITIAL_CHECKLISTS: VehicleChecklist[] = [
+  {
+    id: 'chk-1',
+    budgetId: 'b-101',
+    vehicleModel: 'Jeep Compass Limited 2022',
+    plate: 'RBD4E29',
+    title: 'Vistoria de Entrada - Jeep Compass',
+    items: [
+      { id: 'item-1', label: 'Estepe e Macaco presentes no porta-malas', checked: true },
+      { id: 'item-2', label: 'Nível de combustível marcado (1/2 tanque)', checked: true },
+      { id: 'item-3', label: 'Arranhões prévios fotografados', checked: true },
+      { id: 'item-4', label: 'Manual e chave reserva conferidos', checked: false },
+      { id: 'item-5', label: 'Painel e vidros sem trincas', checked: true },
+    ],
+    notes: 'Cliente solicitou atenção especial ao verniz perolizado original.',
+    createdAt: '2026-10-25T10:15:00.000Z',
+  },
+];
+
+export function getStoredChecklists(): VehicleChecklist[] {
+  if (typeof window === 'undefined') return INITIAL_CHECKLISTS;
+  try {
+    const item = localStorage.getItem(STORAGE_KEYS.CHECKLISTS);
+    if (!item) {
+      localStorage.setItem(STORAGE_KEYS.CHECKLISTS, JSON.stringify(INITIAL_CHECKLISTS));
+      return INITIAL_CHECKLISTS;
+    }
+    return JSON.parse(item);
+  } catch (err) {
+    console.error('Error reading checklists:', err);
+    return INITIAL_CHECKLISTS;
+  }
+}
+
+export function saveStoredChecklists(checklists: VehicleChecklist[]) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(STORAGE_KEYS.CHECKLISTS, JSON.stringify(checklists));
+  } catch (err) {
+    console.error('Error saving checklists:', err);
   }
 }
 

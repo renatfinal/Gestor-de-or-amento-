@@ -7,6 +7,7 @@ import {
   User,
   Car,
   LogOut,
+  Database,
 } from 'lucide-react';
 import { ThemeMode, UserProfile } from '@/lib/types';
 
@@ -14,6 +15,7 @@ interface HeaderProps {
   theme: ThemeMode;
   onToggleTheme: () => void;
   onOpenProfile: () => void;
+  onOpenDatabaseTables?: () => void;
   onLogout?: () => void;
   profile: UserProfile;
   totalBudgets: number;
@@ -23,6 +25,7 @@ export function Header({
   theme,
   onToggleTheme,
   onOpenProfile,
+  onOpenDatabaseTables,
   onLogout,
   profile,
   totalBudgets,
@@ -103,6 +106,23 @@ export function Header({
               </>
             )}
           </button>
+
+          {/* Database & Tables button */}
+          {onOpenDatabaseTables && (
+            <button
+              type="button"
+              onClick={onOpenDatabaseTables}
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-black border transition-all cursor-pointer shadow-xs ${
+                isLight
+                  ? 'bg-cyan-50 border-cyan-300 text-cyan-900 hover:bg-cyan-100'
+                  : 'bg-emerald-950/40 border-emerald-700/60 text-emerald-300 hover:bg-emerald-950/70'
+              }`}
+              title="Abrir Banco de Dados e Tabelas Organizadoras (Check-lists, Eventos, Orçamentos)"
+            >
+              <Database className="w-3.5 h-3.5 text-emerald-500 animate-pulse" />
+              <span className="hidden sm:inline">Banco & Tabelas</span>
+            </button>
+          )}
 
           {/* Profile button */}
           <button

@@ -16,6 +16,8 @@ import {
   ThemeMode,
   TransactionType,
   UserProfile,
+  CalendarEvent,
+  VehicleChecklist,
 } from '@/lib/types';
 import {
   getStoredBudgets,
@@ -32,8 +34,13 @@ import {
   saveStoredProfile,
   saveStoredTheme,
   saveStoredTransactions,
+  getStoredEvents,
+  saveStoredEvents,
+  getStoredChecklists,
+  saveStoredChecklists,
 } from '@/lib/storage';
 import { getBudgetsFromIndexedDb } from '@/lib/imageStorage';
+import { syncDataToCloud, fetchCloudData } from '@/lib/cloudSync';
 import { Header } from '@/components/Header';
 import { BottomNav } from '@/components/BottomNav';
 import { CalendarView } from '@/components/CalendarView';
@@ -44,6 +51,7 @@ import { FinancialView } from '@/components/FinancialView';
 import { BalanceteView } from '@/components/BalanceteView';
 import { ProfileModal } from '@/components/ProfileModal';
 import { LoginPage } from '@/components/LoginPage';
+import { DatabaseTablesModal } from '@/components/DatabaseTablesModal';
 
 export default function HomePage() {
   const mounted = React.useSyncExternalStore(
@@ -63,6 +71,13 @@ export default function HomePage() {
   const [clients, setClients] = useState<Client[]>(() => getStoredClients());
   const [transactions, setTransactions] = useState<FinancialTransaction[]>(() => getStoredTransactions());
   const [profile, setProfile] = useState<UserProfile>(() => getStoredProfile());
+  const [events, setEvents] = useState<CalendarEvent[]>(() => getStoredEvents());
+  const [checklists, setChecklists] = useState<VehicleChecklist[]>(() => getStoredChecklists());
+
+  // Database & Sync state
+  const [isDatabaseTablesModalOpen, setIsDatabaseTablesModalOpen] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
 
   // Modals state
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
@@ -75,6 +90,34 @@ export default function HomePage() {
 
   // Authentication Session
   const [session, setSession] = useState<AuthSession | null>(() => getStoredSession());
+
+  // Real-time automatic Cloud SQL synchronization
+  const triggerCloudSync = async (overrides?: {
+    budgets?: Budget[];
+    clients?: Client[];
+    transactions?: FinancialTransaction[];
+    events?: CalendarEvent[];
+    checklists?: VehicleChecklist[];
+    profile?: UserProfile;
+  }) => {
+    const userEmail = session?.email || profile.email || 'jl.automotive@gmail.com';
+    setIsSyncing(true);
+    try {
+      await syncDataToCloud(userEmail, {
+        budgets: overrides?.budgets ?? budgets,
+        clients: overrides?.clients ?? clients,
+        transactions: overrides?.transactions ?? transactions,
+        events: overrides?.events ?? events,
+        checklists: overrides?.checklists ?? checklists,
+        profile: overrides?.profile ?? profile,
+      });
+      setLastSyncTime(new Date());
+    } catch (e) {
+      console.warn('Real-time sync to Cloud SQL notice:', e);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   const handleLogout = () => {
     clearStoredSession();
@@ -125,6 +168,44 @@ export default function HomePage() {
       .catch(() => {});
   }, []);
 
+  // Hydrate data from Cloud SQL database automatically when session is present
+  useEffect(() => {
+    const targetEmail = session?.email || profile.email || 'jl.automotive@gmail.com';
+    fetchCloudData(targetEmail)
+      .then((cloudData) => {
+        if (cloudData) {
+          if (cloudData.budgets && cloudData.budgets.length > 0) {
+            setBudgets(cloudData.budgets);
+            saveStoredBudgets(cloudData.budgets);
+          }
+          if (cloudData.clients && cloudData.clients.length > 0) {
+            setClients(cloudData.clients);
+            saveStoredClients(cloudData.clients);
+          }
+          if (cloudData.transactions && cloudData.transactions.length > 0) {
+            setTransactions(cloudData.transactions);
+            saveStoredTransactions(cloudData.transactions);
+          }
+          if (cloudData.events && cloudData.events.length > 0) {
+            setEvents(cloudData.events);
+            saveStoredEvents(cloudData.events);
+          }
+          if (cloudData.checklists && cloudData.checklists.length > 0) {
+            setChecklists(cloudData.checklists);
+            saveStoredChecklists(cloudData.checklists);
+          }
+          setLastSyncTime(new Date());
+        } else {
+          // Push initial data to Cloud SQL database
+          triggerCloudSync();
+        }
+      })
+      .catch((err) => {
+        console.warn('Initial cloud fetch notice:', err);
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.email, profile.email]);
+
   const handleToggleTheme = () => {
     const newTheme: ThemeMode = theme === 'dark-spring' ? 'light-cyan' : 'dark-spring';
     setTheme(newTheme);
@@ -145,14 +226,14 @@ export default function HomePage() {
     setBudgets(updatedBudgets);
     saveStoredBudgets(updatedBudgets);
 
+    let updatedClients = clients;
+
     // 2. Automatically sync Client to alphabetical list
     if (budgetToSave.clientName && budgetToSave.clientName.trim()) {
       const trimmedName = budgetToSave.clientName.trim();
       const existingClientIndex = clients.findIndex(
         (c) => c.name.toLowerCase() === trimmedName.toLowerCase()
       );
-
-      let updatedClients: Client[];
 
       if (existingClientIndex >= 0) {
         // Update existing client
@@ -186,6 +267,9 @@ export default function HomePage() {
       saveStoredClients(updatedClients);
     }
 
+    // Sync to Cloud SQL in real time
+    triggerCloudSync({ budgets: updatedBudgets, clients: updatedClients });
+
     showToast(`Orçamento para ${budgetToSave.clientName} salvo com sucesso!`);
   };
 
@@ -201,6 +285,7 @@ export default function HomePage() {
     updated.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
     setClients(updated);
     saveStoredClients(updated);
+    triggerCloudSync({ clients: updated });
     showToast(`Cliente ${client.name} salvo com sucesso!`);
   };
 
@@ -208,6 +293,7 @@ export default function HomePage() {
     const updated = clients.filter((c) => c.id !== clientId);
     setClients(updated);
     saveStoredClients(updated);
+    triggerCloudSync({ clients: updated });
     showToast('Cliente removido da lista.');
   };
 
@@ -222,6 +308,7 @@ export default function HomePage() {
     }
     setTransactions(updated);
     saveStoredTransactions(updated);
+    triggerCloudSync({ transactions: updated });
     showToast(`Lançamento de ${tx.type === 'entrada' ? 'Entrada' : 'Saída'} salvo!`);
   };
 
@@ -229,6 +316,7 @@ export default function HomePage() {
     const updated = transactions.filter((t) => t.id !== id);
     setTransactions(updated);
     saveStoredTransactions(updated);
+    triggerCloudSync({ transactions: updated });
     showToast('Lançamento excluído com sucesso.');
   };
 
@@ -236,7 +324,54 @@ export default function HomePage() {
   const handleSaveProfile = (newProfile: UserProfile) => {
     setProfile(newProfile);
     saveStoredProfile(newProfile);
+    triggerCloudSync({ profile: newProfile });
     showToast('Perfil atualizado com sucesso!');
+  };
+
+  // Events & Notes management
+  const handleSaveEvent = (event: CalendarEvent) => {
+    let updated: CalendarEvent[];
+    const exists = events.some((e) => e.id === event.id);
+    if (exists) {
+      updated = events.map((e) => (e.id === event.id ? event : e));
+    } else {
+      updated = [event, ...events];
+    }
+    setEvents(updated);
+    saveStoredEvents(updated);
+    triggerCloudSync({ events: updated });
+    showToast(`Nota/Evento "${event.title}" salvo no banco de dados!`);
+  };
+
+  const handleDeleteEvent = (id: string) => {
+    const updated = events.filter((e) => e.id !== id);
+    setEvents(updated);
+    saveStoredEvents(updated);
+    triggerCloudSync({ events: updated });
+    showToast('Nota/Evento removido.');
+  };
+
+  // Checklists management
+  const handleSaveChecklist = (chk: VehicleChecklist) => {
+    let updated: VehicleChecklist[];
+    const exists = checklists.some((c) => c.id === chk.id);
+    if (exists) {
+      updated = checklists.map((c) => (c.id === chk.id ? chk : c));
+    } else {
+      updated = [chk, ...checklists];
+    }
+    setChecklists(updated);
+    saveStoredChecklists(updated);
+    triggerCloudSync({ checklists: updated });
+    showToast(`Check-list "${chk.title}" salvo no banco de dados!`);
+  };
+
+  const handleDeleteChecklist = (id: string) => {
+    const updated = checklists.filter((c) => c.id !== id);
+    setChecklists(updated);
+    saveStoredChecklists(updated);
+    triggerCloudSync({ checklists: updated });
+    showToast('Check-list removido.');
   };
 
   // Actions triggered from Calendar or Quick Buttons
@@ -362,6 +497,7 @@ export default function HomePage() {
         theme={theme}
         onToggleTheme={handleToggleTheme}
         onOpenProfile={() => setIsProfileModalOpen(true)}
+        onOpenDatabaseTables={() => setIsDatabaseTablesModalOpen(true)}
         onLogout={handleLogout}
         profile={profile}
         totalBudgets={budgets.length}
@@ -457,6 +593,8 @@ export default function HomePage() {
           <CalendarView
             budgets={budgets}
             transactions={transactions}
+            events={events}
+            checklists={checklists}
             onOpenNewBudget={handleOpenNewBudget}
             onOpenFinancialEntry={handleOpenFinancialEntry}
             onOpenFinancialExpense={handleOpenFinancialExpense}
@@ -536,6 +674,31 @@ export default function HomePage() {
           onSaveProfile={handleSaveProfile}
           onClose={() => setIsProfileModalOpen(false)}
           theme={theme}
+        />
+      )}
+
+      {/* Modal de Tabelas Organizadoras e Banco de Dados Cloud SQL */}
+      {isDatabaseTablesModalOpen && (
+        <DatabaseTablesModal
+          isOpen={isDatabaseTablesModalOpen}
+          onClose={() => setIsDatabaseTablesModalOpen(false)}
+          theme={theme}
+          profile={profile}
+          budgets={budgets}
+          clients={clients}
+          transactions={transactions}
+          events={events}
+          checklists={checklists}
+          onSaveEvent={handleSaveEvent}
+          onDeleteEvent={handleDeleteEvent}
+          onSaveChecklist={handleSaveChecklist}
+          onDeleteChecklist={handleDeleteChecklist}
+          onTriggerSync={async () => {
+            await triggerCloudSync();
+            showToast('Dados sincronizados com sucesso no Cloud SQL!');
+          }}
+          isSyncing={isSyncing}
+          lastSyncTime={lastSyncTime}
         />
       )}
 

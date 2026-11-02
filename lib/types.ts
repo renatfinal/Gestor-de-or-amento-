@@ -72,4 +72,33 @@ export interface UserProfile {
   workshopAddress?: string;
 }
 
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  description?: string;
+  date: string; // YYYY-MM-DD
+  type: 'evento' | 'nota' | 'lembrete' | 'entrega';
+  color?: string;
+  completed?: boolean;
+  createdAt?: string;
+}
+
+export interface ChecklistItem {
+  id: string;
+  label: string;
+  checked: boolean;
+}
+
+export interface VehicleChecklist {
+  id: string;
+  budgetId?: string;
+  vehicleModel?: string;
+  plate?: string;
+  title: string;
+  items: ChecklistItem[];
+  notes?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
 export type ActiveTab = 'calendar' | 'new-budget' | 'clients' | 'financial' | 'balance';
