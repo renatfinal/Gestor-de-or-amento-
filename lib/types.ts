@@ -1,4 +1,4 @@
-export type ThemeMode = 'light-cyan' | 'dark-spring';
+export type ThemeMode = 'light-spring' | 'light-cyan' | 'dark-spring';
 
 export type BudgetStatus =
   | 'Pendente'

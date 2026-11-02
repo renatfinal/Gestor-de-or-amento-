@@ -23,7 +23,7 @@ interface ProfileModalProps {
   profile: UserProfile;
   onSaveProfile: (profile: UserProfile) => void;
   onClose: () => void;
-  theme: 'light-cyan' | 'dark-spring';
+  theme: ThemeMode;
   isFirstAccess?: boolean;
   onFirstAccessSuccess?: (profile: UserProfile) => void;
 }
@@ -37,7 +37,7 @@ export function ProfileModal({
   isFirstAccess = false,
   onFirstAccessSuccess,
 }: ProfileModalProps) {
-  const isLight = theme === 'light-cyan';
+  const isLight = theme !== 'dark-spring';
 
   // Form Fields initialized from props
   const [name, setName] = useState(() =>
@@ -121,7 +121,7 @@ export function ProfileModal({
       <div
         className={`relative w-full max-w-lg rounded-2xl sm:rounded-3xl shadow-2xl border flex flex-col max-h-[92dvh] sm:max-h-[88vh] my-auto transition-all ${
           isLight
-            ? 'bg-white border-zinc-200 text-zinc-900 shadow-cyan-950/15'
+            ? 'bg-white border-zinc-200 text-zinc-900 shadow-emerald-950/15'
             : 'bg-zinc-900 border-zinc-800 text-zinc-100 shadow-black'
         }`}
       >
@@ -140,7 +140,7 @@ export function ProfileModal({
           <div className="flex items-center gap-3 pr-8">
             <div
               className={`p-2.5 sm:p-3 rounded-2xl shrink-0 ${
-                isLight ? 'bg-cyan-100 text-cyan-800' : 'bg-emerald-950/80 text-emerald-400'
+                isLight ? 'bg-emerald-100 text-emerald-950 font-black' : 'bg-emerald-950/80 text-emerald-400'
               }`}
             >
               {isFirstAccess ? <UserPlus className="w-5 h-5 sm:w-6 sm:h-6" /> : <User className="w-5 h-5 sm:w-6 sm:h-6" />}
@@ -189,7 +189,7 @@ export function ProfileModal({
                 placeholder="Ex: João Marcos Silva"
                 className={`w-full pl-9 pr-3.5 py-3 sm:py-2.5 rounded-xl text-base sm:text-sm border focus:outline-hidden transition-all ${
                   isLight
-                    ? 'bg-zinc-50 border-zinc-300 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 text-zinc-900'
+                    ? 'bg-zinc-50 border-zinc-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-zinc-900'
                     : 'bg-zinc-800/80 border-zinc-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-950 text-white'
                 }`}
               />
@@ -214,7 +214,7 @@ export function ProfileModal({
                 placeholder="(xx) xxxxx-xxxx"
                 className={`w-full pl-9 pr-3.5 py-3 sm:py-2.5 rounded-xl text-base sm:text-sm font-mono border focus:outline-hidden transition-all ${
                   isLight
-                    ? 'bg-zinc-50 border-zinc-300 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 text-zinc-900'
+                    ? 'bg-zinc-50 border-zinc-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-zinc-900'
                     : 'bg-zinc-800/80 border-zinc-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-950 text-white'
                 }`}
               />
@@ -238,7 +238,7 @@ export function ProfileModal({
                 placeholder="seuemail@oficina.com.br"
                 className={`w-full pl-9 pr-3.5 py-3 sm:py-2.5 rounded-xl text-base sm:text-sm border focus:outline-hidden transition-all ${
                   isLight
-                    ? 'bg-zinc-50 border-zinc-300 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 text-zinc-900'
+                    ? 'bg-zinc-50 border-zinc-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-zinc-900'
                     : 'bg-zinc-800/80 border-zinc-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-950 text-white'
                 }`}
               />
@@ -263,7 +263,7 @@ export function ProfileModal({
                   placeholder="••••••••"
                   className={`w-full pl-9 pr-9 py-3 sm:py-2.5 rounded-xl text-base sm:text-sm border focus:outline-hidden transition-all ${
                     isLight
-                      ? 'bg-zinc-50 border-zinc-300 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 text-zinc-900'
+                      ? 'bg-zinc-50 border-zinc-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-zinc-900'
                       : 'bg-zinc-800/80 border-zinc-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-950 text-white'
                   }`}
                 />
@@ -292,7 +292,7 @@ export function ProfileModal({
                   placeholder="••••••••"
                   className={`w-full pl-9 pr-9 py-3 sm:py-2.5 rounded-xl text-base sm:text-sm border focus:outline-hidden transition-all ${
                     isLight
-                      ? 'bg-zinc-50 border-zinc-300 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 text-zinc-900'
+                      ? 'bg-zinc-50 border-zinc-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-zinc-900'
                       : 'bg-zinc-800/80 border-zinc-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-950 text-white'
                   }`}
                 />
@@ -321,7 +321,7 @@ export function ProfileModal({
               placeholder="JL Automotive & Pintura Automotiva"
               className={`w-full px-3.5 py-3 sm:py-2.5 rounded-xl text-base sm:text-sm border focus:outline-hidden transition-all ${
                 isLight
-                  ? 'bg-zinc-50 border-zinc-300 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 text-zinc-900'
+                  ? 'bg-zinc-50 border-zinc-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-zinc-900'
                   : 'bg-zinc-800/80 border-zinc-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-950 text-white'
               }`}
             />
@@ -342,13 +342,13 @@ export function ProfileModal({
             </button>
             <button
               type="submit"
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white shadow-md transition-all active:scale-98 cursor-pointer ${
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black shadow-md transition-all active:scale-98 cursor-pointer ${
                 isLight
-                  ? 'bg-cyan-600 hover:bg-cyan-700 shadow-cyan-600/30'
-                  : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/30'
+                  ? 'bg-[#00FF7F] hover:bg-[#00e676] text-black shadow-emerald-500/20'
+                  : 'bg-emerald-600 hover:bg-emerald-700 text-black shadow-emerald-600/30'
               }`}
             >
-              <Save className="w-4 h-4" />
+              <Save className="w-4 h-4 text-black" />
               <span>{isFirstAccess ? 'Criar Perfil e Acessar' : 'Salvar'}</span>
             </button>
           </div>

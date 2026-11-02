@@ -3,12 +3,14 @@
 import React from 'react';
 import { X, FileText, ArrowDownLeft, ArrowUpRight, UserPlus, Calendar } from 'lucide-react';
 
+import { ThemeMode } from '@/lib/types';
+
 interface DayActionModalProps {
   isOpen: boolean;
   selectedDate: Date | null;
   onClose: () => void;
   onSelectAction: (action: 'budget' | 'entry' | 'expense' | 'add-client', date: Date) => void;
-  theme: 'light-cyan' | 'dark-spring';
+  theme: ThemeMode;
 }
 
 export function DayActionModal({
@@ -20,7 +22,7 @@ export function DayActionModal({
 }: DayActionModalProps) {
   if (!isOpen || !selectedDate) return null;
 
-  const isLight = theme === 'light-cyan';
+  const isLight = theme !== 'dark-spring';
 
   const formattedDate = selectedDate.toLocaleDateString('pt-BR', {
     weekday: 'long',
@@ -52,7 +54,7 @@ export function DayActionModal({
         <div className="flex items-start gap-3 mb-5 pr-8">
           <div
             className={`p-2.5 rounded-xl shrink-0 ${
-              isLight ? 'bg-cyan-100 text-cyan-700' : 'bg-emerald-950/80 text-emerald-400'
+              isLight ? 'bg-emerald-100 text-emerald-950 font-black' : 'bg-emerald-950/80 text-emerald-400'
             }`}
           >
             <Calendar className="w-6 h-6" />
@@ -81,13 +83,13 @@ export function DayActionModal({
             }}
             className={`w-full flex items-center justify-between p-3.5 rounded-xl border text-left transition-all group ${
               isLight
-                ? 'bg-zinc-50/70 hover:bg-cyan-50 border-zinc-200 hover:border-cyan-400'
+                ? 'bg-zinc-50 hover:bg-emerald-50 border-zinc-200 hover:border-emerald-400'
                 : 'bg-zinc-800/60 hover:bg-zinc-800 border-zinc-700/80 hover:border-emerald-500'
             }`}
           >
             <div className="flex items-center gap-3">
               <span className="text-lg text-emerald-500 dark:text-emerald-400 font-bold">○</span>
-              <div className="p-2 rounded-lg bg-cyan-500/10 text-cyan-600 dark:text-cyan-400">
+              <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
                 <FileText className="w-5 h-5" />
               </div>
               <div>
@@ -98,8 +100,8 @@ export function DayActionModal({
               </div>
             </div>
             <span
-              className={`text-xs font-medium px-2.5 py-1 rounded-full ${
-                isLight ? 'bg-cyan-100 text-cyan-800' : 'bg-emerald-950 text-emerald-300'
+              className={`text-xs font-bold px-2.5 py-1 rounded-full ${
+                isLight ? 'bg-emerald-100 text-emerald-950' : 'bg-emerald-950 text-emerald-300'
               }`}
             >
               Criar
@@ -175,7 +177,7 @@ export function DayActionModal({
             }}
             className={`w-full flex items-center justify-between p-3.5 rounded-xl border text-left transition-all group ${
               isLight
-                ? 'bg-zinc-50/70 hover:bg-cyan-50 border-zinc-200 hover:border-cyan-400'
+                ? 'bg-zinc-50 hover:bg-emerald-50 border-zinc-200 hover:border-emerald-400'
                 : 'bg-zinc-800/60 hover:bg-zinc-800 border-zinc-700/80 hover:border-emerald-500'
             }`}
           >

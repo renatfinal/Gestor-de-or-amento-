@@ -1,10 +1,15 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root:not(.dark) {
   color-scheme: light;
-  color: #000000;
+  background-color: #f4f4f5;
+  color: #09090b;
 }
 
 .dark {
   color-scheme: dark;
+  background-color: #000000;
+  color: #f4f4f5;
 }

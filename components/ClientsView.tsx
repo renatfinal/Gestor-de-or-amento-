@@ -26,7 +26,7 @@ interface ClientsViewProps {
   onDeleteClient: (clientId: string) => void;
   onNewBudgetForClient: (client: Client) => void;
   onOpenBudgetToEdit?: (budget: Budget) => void;
-  theme: 'light-cyan' | 'dark-spring';
+  theme: ThemeMode;
 }
 
 export function ClientsView({
@@ -38,7 +38,7 @@ export function ClientsView({
   onOpenBudgetToEdit,
   theme,
 }: ClientsViewProps) {
-  const isLight = theme === 'light-cyan';
+  const isLight = theme !== 'dark-spring';
 
   // Search & Filter
   const [searchTerm, setSearchTerm] = useState('');
@@ -131,7 +131,7 @@ export function ClientsView({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-zinc-200 dark:border-zinc-800">
           <div>
             <div className="flex items-center gap-2">
-              <Users className={`w-5 h-5 ${isLight ? 'text-cyan-600' : 'text-emerald-400'}`} />
+              <Users className={`w-5 h-5 ${isLight ? 'text-emerald-700' : 'text-emerald-400'}`} />
               <h2 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-white">
                 Clientes & Orçamentos
               </h2>
@@ -144,13 +144,13 @@ export function ClientsView({
           <button
             type="button"
             onClick={() => handleOpenEditor()}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white shadow-md transition-all ${
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black shadow-md transition-all cursor-pointer ${
               isLight
-                ? 'bg-cyan-600 hover:bg-cyan-700 shadow-cyan-600/30'
-                : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/30'
+                ? 'bg-[#00FF7F] hover:bg-[#00e676] text-black shadow-emerald-500/20'
+                : 'bg-emerald-600 hover:bg-emerald-700 text-black shadow-emerald-600/30'
             }`}
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-4 h-4 text-black" />
             Cadastrar Cliente
           </button>
         </div>
@@ -164,7 +164,7 @@ export function ClientsView({
             placeholder="Buscar por nome do cliente, telefone ou veículo..."
             className={`w-full pl-10 pr-4 py-2.5 rounded-xl text-sm border focus:outline-hidden transition-all ${
               isLight
-                ? 'bg-zinc-50 border-zinc-300 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 text-zinc-900'
+                ? 'bg-zinc-50 border-zinc-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-zinc-900'
                 : 'bg-zinc-800/80 border-zinc-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-950 text-white'
             }`}
           />
@@ -237,7 +237,7 @@ export function ClientsView({
                 key={client.id}
                 className={`p-5 rounded-2xl border transition-all flex flex-col justify-between ${
                   isLight
-                    ? 'bg-white border-zinc-200 hover:border-cyan-300 shadow-xs hover:shadow-md'
+                    ? 'bg-white border-zinc-200 hover:border-emerald-400 shadow-xs hover:shadow-md'
                     : 'bg-zinc-900 border-zinc-800 hover:border-emerald-700/80 shadow-md'
                 }`}
               >
@@ -248,7 +248,7 @@ export function ClientsView({
                       <div
                         className={`w-9 h-9 rounded-xl font-black text-sm flex items-center justify-center shrink-0 ${
                           isLight
-                            ? 'bg-cyan-100 text-cyan-800'
+                            ? 'bg-emerald-100 text-emerald-950 font-black'
                             : 'bg-emerald-950 text-emerald-400 border border-emerald-800/40'
                         }`}
                       >
@@ -338,7 +338,7 @@ export function ClientsView({
                         type="button"
                         onClick={() => onOpenBudgetToEdit?.(latestBudget)}
                         className={`text-xs font-bold flex items-center gap-1.5 hover:underline ${
-                          isLight ? 'text-cyan-800' : 'text-emerald-400'
+                          isLight ? 'text-emerald-700' : 'text-emerald-400'
                         }`}
                         title="Clique para abrir e alterar o andamento do serviço"
                       >
@@ -372,9 +372,9 @@ export function ClientsView({
                   <button
                     type="button"
                     onClick={() => onNewBudgetForClient(client)}
-                    className={`w-full py-2 px-3 rounded-xl text-xs font-semibold border flex items-center justify-center gap-1.5 transition-colors ${
+                    className={`w-full py-2 px-3 rounded-xl text-xs font-semibold border flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
                       isLight
-                        ? 'border-zinc-200 hover:border-cyan-400 hover:bg-cyan-50 text-cyan-800'
+                        ? 'border-zinc-200 hover:border-emerald-500 hover:bg-emerald-50 text-emerald-950'
                         : 'border-zinc-800 hover:border-emerald-600 hover:bg-emerald-950/30 text-emerald-300'
                     }`}
                   >
@@ -411,7 +411,7 @@ export function ClientsView({
             <div className="flex items-center gap-2.5 mb-5">
               <div
                 className={`p-2 rounded-xl ${
-                  isLight ? 'bg-cyan-100 text-cyan-800' : 'bg-emerald-950 text-emerald-400'
+                  isLight ? 'bg-emerald-100 text-emerald-950 font-bold' : 'bg-emerald-950 text-emerald-400'
                 }`}
               >
                 <Users className="w-5 h-5" />
@@ -445,7 +445,7 @@ export function ClientsView({
                   placeholder="Ex: Carlos Eduardo Santos"
                   className={`w-full px-3.5 py-2.5 rounded-xl text-sm border focus:outline-hidden transition-all ${
                     isLight
-                      ? 'bg-zinc-50 border-zinc-300 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200'
+                      ? 'bg-zinc-50 border-zinc-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-zinc-900'
                       : 'bg-zinc-800/80 border-zinc-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-950 text-white'
                   }`}
                 />
@@ -463,7 +463,7 @@ export function ClientsView({
                   placeholder="(XX) XXXXX-XXXX"
                   className={`w-full px-3.5 py-2.5 rounded-xl text-sm border font-mono focus:outline-hidden transition-all ${
                     isLight
-                      ? 'bg-zinc-50 border-zinc-300 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200'
+                      ? 'bg-zinc-50 border-zinc-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-zinc-900'
                       : 'bg-zinc-800/80 border-zinc-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-950 text-white'
                   }`}
                 />
@@ -480,7 +480,7 @@ export function ClientsView({
                   placeholder="Ex: Volkswagen Polo 1.0 TSI"
                   className={`w-full px-3.5 py-2.5 rounded-xl text-sm border focus:outline-hidden transition-all ${
                     isLight
-                      ? 'bg-zinc-50 border-zinc-300 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200'
+                      ? 'bg-zinc-50 border-zinc-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-zinc-900'
                       : 'bg-zinc-800/80 border-zinc-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-950 text-white'
                   }`}
                 />
@@ -497,7 +497,7 @@ export function ClientsView({
                   placeholder="Ex: Preferência por tintas originais, cliente fidelizado..."
                   className={`w-full px-3.5 py-2.5 rounded-xl text-sm border focus:outline-hidden transition-all ${
                     isLight
-                      ? 'bg-zinc-50 border-zinc-300 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200'
+                      ? 'bg-zinc-50 border-zinc-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-zinc-900'
                       : 'bg-zinc-800/80 border-zinc-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-950 text-white'
                   }`}
                 />
@@ -518,13 +518,13 @@ export function ClientsView({
                 </button>
                 <button
                   type="submit"
-                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white shadow-md transition-all active:scale-98 ${
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black shadow-md transition-all active:scale-98 cursor-pointer ${
                     isLight
-                      ? 'bg-cyan-600 hover:bg-cyan-700 shadow-cyan-600/30'
-                      : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/30'
+                      ? 'bg-[#00FF7F] hover:bg-[#00e676] text-black shadow-emerald-500/20'
+                      : 'bg-emerald-600 hover:bg-emerald-700 text-black shadow-emerald-600/30'
                   }`}
                 >
-                  <Save className="w-4 h-4" />
+                  <Save className="w-4 h-4 text-black" />
                   Salvar
                 </button>
               </div>

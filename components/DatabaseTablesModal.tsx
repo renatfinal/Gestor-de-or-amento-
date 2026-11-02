@@ -71,7 +71,7 @@ export function DatabaseTablesModal({
   isSyncing,
   lastSyncTime,
 }: DatabaseTablesModalProps) {
-  const isLight = theme === 'light-cyan';
+  const isLight = theme !== 'dark-spring';
   const [activeTab, setActiveTab] = useState<TableTab>('checklists');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -205,7 +205,7 @@ export function DatabaseTablesModal({
       <div
         className={`relative w-full max-w-5xl rounded-2xl sm:rounded-3xl shadow-2xl border flex flex-col max-h-[92vh] overflow-hidden transition-all ${
           isLight
-            ? 'bg-white border-zinc-200 text-zinc-900 shadow-cyan-950/20'
+            ? 'bg-white border-zinc-200 text-zinc-900 shadow-emerald-950/20'
             : 'bg-zinc-900 border-zinc-800 text-zinc-100 shadow-black'
         }`}
       >
@@ -218,7 +218,7 @@ export function DatabaseTablesModal({
           <div className="flex items-center gap-3">
             <div
               className={`p-2.5 rounded-2xl shadow-sm ${
-                isLight ? 'bg-cyan-600 text-white' : 'bg-emerald-600 text-black'
+                isLight ? 'bg-[#00FF7F] text-black font-black' : 'bg-emerald-600 text-black'
               }`}
             >
               <Database className="w-6 h-6" />
@@ -272,7 +272,7 @@ export function DatabaseTablesModal({
         <div
           className={`px-4 sm:px-6 py-2 text-xs flex flex-wrap items-center justify-between gap-2 border-b ${
             isLight
-              ? 'bg-cyan-50/60 border-cyan-100 text-cyan-950'
+              ? 'bg-emerald-100/70 border-emerald-200 text-emerald-950 font-bold'
               : 'bg-zinc-950/60 border-zinc-800 text-zinc-400'
           }`}
         >
@@ -298,17 +298,17 @@ export function DatabaseTablesModal({
           <button
             type="button"
             onClick={() => setActiveTab('checklists')}
-            className={`flex items-center gap-2 px-3 py-2 text-xs font-bold border-b-2 whitespace-nowrap transition-all ${
+            className={`flex items-center gap-2 px-3 py-2 text-xs font-bold border-b-2 whitespace-nowrap transition-all cursor-pointer ${
               activeTab === 'checklists'
                 ? isLight
-                  ? 'border-cyan-600 text-cyan-700'
+                  ? 'border-emerald-600 text-emerald-800 font-black'
                   : 'border-[#00FF7F] text-[#00FF7F]'
-                : 'border-transparent text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
+                : 'border-transparent text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
             }`}
           >
             <ClipboardCheck className="w-4 h-4" />
             <span>Check-lists de Vistoria</span>
-            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-zinc-200 dark:bg-zinc-800">
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-zinc-200 dark:bg-zinc-800 font-bold">
               {checklists.length}
             </span>
           </button>
@@ -316,17 +316,17 @@ export function DatabaseTablesModal({
           <button
             type="button"
             onClick={() => setActiveTab('events')}
-            className={`flex items-center gap-2 px-3 py-2 text-xs font-bold border-b-2 whitespace-nowrap transition-all ${
+            className={`flex items-center gap-2 px-3 py-2 text-xs font-bold border-b-2 whitespace-nowrap transition-all cursor-pointer ${
               activeTab === 'events'
                 ? isLight
-                  ? 'border-cyan-600 text-cyan-700'
+                  ? 'border-emerald-600 text-emerald-800 font-black'
                   : 'border-[#00FF7F] text-[#00FF7F]'
-                : 'border-transparent text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
+                : 'border-transparent text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
             }`}
           >
             <Calendar className="w-4 h-4" />
             <span>Eventos & Notas</span>
-            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-zinc-200 dark:bg-zinc-800">
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-zinc-200 dark:bg-zinc-800 font-bold">
               {events.length}
             </span>
           </button>
@@ -334,17 +334,17 @@ export function DatabaseTablesModal({
           <button
             type="button"
             onClick={() => setActiveTab('budgets')}
-            className={`flex items-center gap-2 px-3 py-2 text-xs font-bold border-b-2 whitespace-nowrap transition-all ${
+            className={`flex items-center gap-2 px-3 py-2 text-xs font-bold border-b-2 whitespace-nowrap transition-all cursor-pointer ${
               activeTab === 'budgets'
                 ? isLight
-                  ? 'border-cyan-600 text-cyan-700'
+                  ? 'border-emerald-600 text-emerald-800 font-black'
                   : 'border-[#00FF7F] text-[#00FF7F]'
-                : 'border-transparent text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
+                : 'border-transparent text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
             }`}
           >
             <FileText className="w-4 h-4" />
             <span>Orçamentos</span>
-            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-zinc-200 dark:bg-zinc-800">
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-zinc-200 dark:bg-zinc-800 font-bold">
               {budgets.length}
             </span>
           </button>
@@ -352,17 +352,17 @@ export function DatabaseTablesModal({
           <button
             type="button"
             onClick={() => setActiveTab('clients')}
-            className={`flex items-center gap-2 px-3 py-2 text-xs font-bold border-b-2 whitespace-nowrap transition-all ${
+            className={`flex items-center gap-2 px-3 py-2 text-xs font-bold border-b-2 whitespace-nowrap transition-all cursor-pointer ${
               activeTab === 'clients'
                 ? isLight
-                  ? 'border-cyan-600 text-cyan-700'
+                  ? 'border-emerald-600 text-emerald-800 font-black'
                   : 'border-[#00FF7F] text-[#00FF7F]'
-                : 'border-transparent text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
+                : 'border-transparent text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
             }`}
           >
             <Users className="w-4 h-4" />
             <span>Clientes</span>
-            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-zinc-200 dark:bg-zinc-800">
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-zinc-200 dark:bg-zinc-800 font-bold">
               {clients.length}
             </span>
           </button>
@@ -370,17 +370,17 @@ export function DatabaseTablesModal({
           <button
             type="button"
             onClick={() => setActiveTab('balance')}
-            className={`flex items-center gap-2 px-3 py-2 text-xs font-bold border-b-2 whitespace-nowrap transition-all ${
+            className={`flex items-center gap-2 px-3 py-2 text-xs font-bold border-b-2 whitespace-nowrap transition-all cursor-pointer ${
               activeTab === 'balance'
                 ? isLight
-                  ? 'border-cyan-600 text-cyan-700'
+                  ? 'border-emerald-600 text-emerald-800 font-black'
                   : 'border-[#00FF7F] text-[#00FF7F]'
-                : 'border-transparent text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
+                : 'border-transparent text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
             }`}
           >
             <DollarSign className="w-4 h-4" />
             <span>Balancete & Lançamentos</span>
-            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-zinc-200 dark:bg-zinc-800">
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-zinc-200 dark:bg-zinc-800 font-bold">
               {transactions.length}
             </span>
           </button>
@@ -388,12 +388,12 @@ export function DatabaseTablesModal({
           <button
             type="button"
             onClick={() => setActiveTab('account')}
-            className={`flex items-center gap-2 px-3 py-2 text-xs font-bold border-b-2 whitespace-nowrap transition-all ${
+            className={`flex items-center gap-2 px-3 py-2 text-xs font-bold border-b-2 whitespace-nowrap transition-all cursor-pointer ${
               activeTab === 'account'
                 ? isLight
-                  ? 'border-cyan-600 text-cyan-700'
+                  ? 'border-emerald-600 text-emerald-800 font-black'
                   : 'border-[#00FF7F] text-[#00FF7F]'
-                : 'border-transparent text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
+                : 'border-transparent text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
             }`}
           >
             <Database className="w-4 h-4" />
@@ -412,7 +412,7 @@ export function DatabaseTablesModal({
               placeholder="Pesquisar registros nesta tabela..."
               className={`w-full pl-9 pr-4 py-2 rounded-xl text-xs sm:text-sm border transition-all ${
                 isLight
-                  ? 'bg-zinc-50 border-zinc-300 text-zinc-900 focus:border-cyan-500'
+                  ? 'bg-zinc-50 border-zinc-300 text-zinc-900 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200'
                   : 'bg-zinc-800/80 border-zinc-700 text-white focus:border-emerald-500'
               }`}
             />
@@ -434,11 +434,11 @@ export function DatabaseTablesModal({
                 <button
                   type="button"
                   onClick={() => setIsAddingChecklist(!isAddingChecklist)}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer ${
-                    isLight ? 'bg-cyan-600 text-white hover:bg-cyan-700' : 'bg-emerald-600 text-black hover:bg-emerald-500'
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black shadow-sm transition-all cursor-pointer ${
+                    isLight ? 'bg-[#00FF7F] text-black hover:bg-[#00e676]' : 'bg-emerald-600 text-black hover:bg-emerald-500'
                   }`}
                 >
-                  <Plus className="w-4 h-4" />
+                  <Plus className="w-4 h-4 text-black" />
                   <span>Novo Check-list</span>
                 </button>
               </div>
@@ -448,7 +448,7 @@ export function DatabaseTablesModal({
                 <form
                   onSubmit={handleCreateChecklist}
                   className={`p-4 rounded-2xl border space-y-3 ${
-                    isLight ? 'bg-cyan-50/50 border-cyan-200' : 'bg-zinc-800/70 border-zinc-700'
+                    isLight ? 'bg-emerald-50/50 border-emerald-200' : 'bg-zinc-800/70 border-zinc-700'
                   }`}
                 >
                   <h4 className="text-xs font-black uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
@@ -552,8 +552,8 @@ export function DatabaseTablesModal({
                     </button>
                     <button
                       type="submit"
-                      className={`px-4 py-1.5 rounded-xl text-xs font-bold ${
-                        isLight ? 'bg-cyan-600 text-white' : 'bg-emerald-600 text-black'
+                      className={`px-4 py-1.5 rounded-xl text-xs font-black cursor-pointer ${
+                        isLight ? 'bg-[#00FF7F] text-black hover:bg-[#00e676]' : 'bg-emerald-600 text-black'
                       }`}
                     >
                       Salvar no Banco
@@ -585,7 +585,7 @@ export function DatabaseTablesModal({
                       >
                         <div className="flex items-start justify-between gap-2 mb-2">
                           <div>
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-600 dark:text-emerald-400">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
                               {chk.vehicleModel || 'Veículo'} • Placa: {chk.plate || '---'}
                             </span>
                             <h4 className="font-bold text-sm text-zinc-900 dark:text-white leading-snug">
@@ -670,11 +670,11 @@ export function DatabaseTablesModal({
                 <button
                   type="button"
                   onClick={() => setIsAddingEvent(!isAddingEvent)}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer ${
-                    isLight ? 'bg-cyan-600 text-white hover:bg-cyan-700' : 'bg-emerald-600 text-black hover:bg-emerald-500'
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black shadow-sm transition-all cursor-pointer ${
+                    isLight ? 'bg-[#00FF7F] text-black hover:bg-[#00e676]' : 'bg-emerald-600 text-black hover:bg-emerald-500'
                   }`}
                 >
-                  <Plus className="w-4 h-4" />
+                  <Plus className="w-4 h-4 text-black" />
                   <span>Nova Nota / Evento</span>
                 </button>
               </div>
@@ -684,7 +684,7 @@ export function DatabaseTablesModal({
                 <form
                   onSubmit={handleCreateEvent}
                   className={`p-4 rounded-2xl border space-y-3 ${
-                    isLight ? 'bg-cyan-50/50 border-cyan-200' : 'bg-zinc-800/70 border-zinc-700'
+                    isLight ? 'bg-emerald-50/50 border-emerald-200' : 'bg-zinc-800/70 border-zinc-700'
                   }`}
                 >
                   <h4 className="text-xs font-black uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
@@ -750,8 +750,8 @@ export function DatabaseTablesModal({
                     </button>
                     <button
                       type="submit"
-                      className={`px-4 py-1.5 rounded-xl text-xs font-bold ${
-                        isLight ? 'bg-cyan-600 text-white' : 'bg-emerald-600 text-black'
+                      className={`px-4 py-1.5 rounded-xl text-xs font-black cursor-pointer ${
+                        isLight ? 'bg-[#00FF7F] text-black hover:bg-[#00e676]' : 'bg-emerald-600 text-black'
                       }`}
                     >
                       Salvar Nota no Banco
@@ -797,7 +797,7 @@ export function DatabaseTablesModal({
                                 ev.type === 'entrega'
                                   ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
                                   : ev.type === 'lembrete'
-                                  ? 'bg-cyan-500/20 text-cyan-600 dark:text-cyan-400'
+                                  ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-400'
                                   : 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
                               }`}
                             >

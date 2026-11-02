@@ -24,7 +24,7 @@ interface CalendarViewProps {
   onOpenFinancialExpense: (presetDate?: string) => void;
   onOpenAddClient: () => void;
   onOpenEventModal?: (presetDate?: string) => void;
-  theme: 'light-cyan' | 'dark-spring';
+  theme: ThemeMode;
 }
 
 const MONTH_NAMES = [
@@ -55,7 +55,7 @@ export function CalendarView({
   onOpenAddClient,
   theme,
 }: CalendarViewProps) {
-  const isLight = theme === 'light-cyan';
+  const isLight = theme !== 'dark-spring';
 
   // Today is based on current system time (2026)
   const today = new Date();
@@ -166,7 +166,7 @@ export function CalendarView({
           <div>
             <div className="flex items-center gap-2">
               <CalendarIcon
-                className={`w-5 h-5 ${isLight ? 'text-cyan-700' : 'text-emerald-400'}`}
+                className={`w-5 h-5 ${isLight ? 'text-emerald-700' : 'text-emerald-400'}`}
               />
               <h2 className="text-xl font-black tracking-tight text-black dark:text-white">
                 Calendário da Oficina
@@ -191,7 +191,7 @@ export function CalendarView({
                 type="button"
                 onClick={handlePrevMonth}
                 title="Mês Anterior"
-                className="p-1.5 rounded-lg text-black hover:text-cyan-800 dark:text-zinc-400 dark:hover:text-white hover:bg-zinc-200/60 dark:hover:bg-zinc-700 transition-colors font-bold"
+                className="p-1.5 rounded-lg text-black hover:text-emerald-800 dark:text-zinc-400 dark:hover:text-white hover:bg-zinc-200/60 dark:hover:bg-zinc-700 transition-colors font-bold cursor-pointer"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -199,7 +199,7 @@ export function CalendarView({
               <button
                 type="button"
                 onClick={() => setIsMonthPickerOpen(true)}
-                className="px-3 py-1 font-black text-sm hover:underline flex items-center gap-1.5 text-black dark:text-zinc-100"
+                className="px-3 py-1 font-black text-sm hover:underline flex items-center gap-1.5 text-black dark:text-zinc-100 cursor-pointer"
                 title="Trocar Mês"
               >
                 <span>{MONTH_NAMES[currentMonth]}</span>
@@ -209,7 +209,7 @@ export function CalendarView({
                 type="button"
                 onClick={handleNextMonth}
                 title="Próximo Mês"
-                className="p-1.5 rounded-lg text-black hover:text-cyan-800 dark:text-zinc-400 dark:hover:text-white hover:bg-zinc-200/60 dark:hover:bg-zinc-700 transition-colors font-bold"
+                className="p-1.5 rounded-lg text-black hover:text-emerald-800 dark:text-zinc-400 dark:hover:text-white hover:bg-zinc-200/60 dark:hover:bg-zinc-700 transition-colors font-bold cursor-pointer"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -227,7 +227,7 @@ export function CalendarView({
                 type="button"
                 onClick={handlePrevYear}
                 title="Ano Anterior"
-                className="p-1.5 rounded-lg text-black hover:text-cyan-800 dark:text-zinc-400 dark:hover:text-white hover:bg-zinc-200/60 dark:hover:bg-zinc-700 transition-colors font-bold"
+                className="p-1.5 rounded-lg text-black hover:text-emerald-800 dark:text-zinc-400 dark:hover:text-white hover:bg-zinc-200/60 dark:hover:bg-zinc-700 transition-colors font-bold cursor-pointer"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -235,9 +235,9 @@ export function CalendarView({
               <button
                 type="button"
                 onClick={() => setIsYearPickerOpen(true)}
-                className={`px-3 py-1 font-black text-sm rounded-md transition-colors ${
+                className={`px-3 py-1 font-black text-sm rounded-md transition-colors cursor-pointer ${
                   isLight
-                    ? 'text-black hover:bg-cyan-50'
+                    ? 'text-black hover:bg-emerald-100'
                     : 'text-emerald-400 hover:bg-emerald-950/40'
                 }`}
                 title="Clique para escolher ano (-20 até +10 anos)"
@@ -249,7 +249,7 @@ export function CalendarView({
                 type="button"
                 onClick={handleNextYear}
                 title="Próximo Ano"
-                className="p-1.5 rounded-lg text-black hover:text-cyan-800 dark:text-zinc-400 dark:hover:text-white hover:bg-zinc-200/60 dark:hover:bg-zinc-700 transition-colors font-bold"
+                className="p-1.5 rounded-lg text-black hover:text-emerald-800 dark:text-zinc-400 dark:hover:text-white hover:bg-zinc-200/60 dark:hover:bg-zinc-700 transition-colors font-bold cursor-pointer"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -344,7 +344,7 @@ export function CalendarView({
                   }}
                   className={`group relative min-h-[75px] md:min-h-[102px] p-2 rounded-xl md:rounded-2xl border transition-all cursor-pointer flex flex-col justify-between ${
                     isLight
-                      ? 'bg-zinc-50/70 hover:bg-cyan-50/80 border-zinc-200 hover:border-cyan-400 hover:shadow-md'
+                      ? 'bg-zinc-50 hover:bg-emerald-50/80 border-zinc-200 hover:border-emerald-400 hover:shadow-md'
                       : 'bg-zinc-800/40 hover:bg-zinc-800 border-zinc-700/60 hover:border-emerald-500 hover:shadow-lg'
                   }`}
                 >
@@ -364,7 +364,7 @@ export function CalendarView({
                     )}
 
                     {/* Quick "+" indicator on hover */}
-                    <span className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded-full text-black hover:text-cyan-800 dark:hover:text-zinc-200">
+                    <span className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded-full text-black hover:text-emerald-800 dark:hover:text-zinc-200">
                       <Plus className="w-3.5 h-3.5" />
                     </span>
                   </div>
@@ -374,8 +374,8 @@ export function CalendarView({
                     {dayBudgets.length > 0 && (
                       <div className={`flex items-center gap-1 text-[10px] md:text-[11px] font-black px-1.5 py-0.5 rounded-md truncate ${
                         isLight
-                          ? 'bg-cyan-100 text-cyan-950 border border-cyan-300'
-                          : 'bg-cyan-500/15 text-cyan-300'
+                          ? 'bg-emerald-100 text-emerald-950 border border-emerald-300'
+                          : 'bg-emerald-950/70 text-emerald-300'
                       }`}>
                         <FileText className="w-3 h-3 shrink-0" />
                         <span className="truncate">
@@ -472,17 +472,17 @@ export function CalendarView({
                       setCurrentYear(yearOption);
                       setIsYearPickerOpen(false);
                     }}
-                    className={`p-3 rounded-xl text-center text-sm font-semibold transition-all border ${
+                    className={`p-3 rounded-xl text-center text-sm font-semibold transition-all border cursor-pointer ${
                       isSelected
                         ? isLight
-                          ? 'bg-cyan-600 text-white border-cyan-600 shadow-md shadow-cyan-600/30'
+                          ? 'bg-[#00FF7F] text-black font-black border-emerald-400 shadow-md shadow-emerald-500/20'
                           : 'bg-emerald-600 text-white border-emerald-500 shadow-md shadow-emerald-600/30'
                         : isCurrentRefYear
                         ? isLight
-                          ? 'bg-cyan-50 border-cyan-300 text-cyan-800'
+                          ? 'bg-emerald-100 border-emerald-300 text-emerald-950 font-bold'
                           : 'bg-emerald-950/40 border-emerald-700/60 text-emerald-300'
                         : isLight
-                        ? 'bg-zinc-50 hover:bg-zinc-100 text-zinc-800 border-zinc-200'
+                        ? 'bg-zinc-50 hover:bg-zinc-100 text-zinc-900 border-zinc-200'
                         : 'bg-zinc-800/80 hover:bg-zinc-750 text-zinc-200 border-zinc-700'
                     }`}
                   >
@@ -544,13 +544,13 @@ export function CalendarView({
                       setCurrentMonth(index);
                       setIsMonthPickerOpen(false);
                     }}
-                    className={`py-3 px-2 rounded-xl text-center text-sm font-semibold transition-all border ${
+                    className={`py-3 px-2 rounded-xl text-center text-sm font-semibold transition-all border cursor-pointer ${
                       isSelected
                         ? isLight
-                          ? 'bg-cyan-600 text-white border-cyan-600 shadow-md'
+                          ? 'bg-[#00FF7F] text-black font-black border-emerald-400 shadow-md'
                           : 'bg-emerald-600 text-white border-emerald-500 shadow-md'
                         : isLight
-                        ? 'bg-zinc-50 hover:bg-cyan-50 text-zinc-800 border-zinc-200'
+                        ? 'bg-zinc-100 hover:bg-emerald-100 text-zinc-900 border-zinc-300'
                         : 'bg-zinc-800/80 hover:bg-zinc-800 text-zinc-200 border-zinc-700'
                     }`}
                   >

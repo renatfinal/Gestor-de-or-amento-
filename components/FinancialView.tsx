@@ -52,7 +52,7 @@ interface FinancialViewProps {
   onDeleteTransaction: (id: string) => void;
   presetDate?: string; // YYYY-MM-DD
   presetType?: TransactionType;
-  theme: 'light-cyan' | 'dark-spring';
+  theme: ThemeMode;
 }
 
 export function FinancialView({
@@ -63,7 +63,7 @@ export function FinancialView({
   presetType,
   theme,
 }: FinancialViewProps) {
-  const isLight = theme === 'light-cyan';
+  const isLight = theme !== 'dark-spring';
 
   // Active view tab: 'all' | 'entrada' | 'saida'
   const [activeSubTab, setActiveSubTab] = useState<'all' | 'entrada' | 'saida'>(
@@ -562,7 +562,7 @@ export function FinancialView({
                           title="Alterar Opção de Pagamento"
                           className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-[11px] font-bold border transition-all cursor-pointer ${
                             isLight
-                              ? 'bg-cyan-50/80 border-cyan-200 text-cyan-950 hover:bg-cyan-100 hover:border-cyan-300'
+                              ? 'bg-emerald-100 border-emerald-300 text-emerald-950 hover:bg-emerald-200'
                               : 'bg-zinc-800/90 border-zinc-700 text-zinc-200 hover:bg-zinc-700 hover:border-zinc-500'
                           }`}
                         >
@@ -648,7 +648,7 @@ export function FinancialView({
           <div
             className={`relative w-full max-w-md rounded-2xl sm:rounded-3xl shadow-2xl border flex flex-col max-h-[92dvh] sm:max-h-[88vh] my-auto transition-all ${
               isLight
-                ? 'bg-white border-zinc-200 text-zinc-900 shadow-cyan-950/15'
+                ? 'bg-white border-zinc-200 text-zinc-900 shadow-emerald-950/15'
                 : 'bg-zinc-900 border-zinc-800 text-zinc-100 shadow-black'
             }`}
           >
@@ -743,7 +743,7 @@ export function FinancialView({
                   }
                   className={`w-full px-3.5 py-3 sm:py-2.5 rounded-xl text-base sm:text-sm border focus:outline-hidden transition-all ${
                     isLight
-                      ? 'bg-zinc-50 border-zinc-300 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 text-zinc-900'
+                      ? 'bg-zinc-50 border-zinc-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-zinc-900'
                       : 'bg-zinc-800/80 border-zinc-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-950 text-white'
                   }`}
                 />
@@ -769,7 +769,7 @@ export function FinancialView({
                     placeholder="0,00"
                     className={`w-full pl-10 pr-3.5 py-3 sm:py-2.5 rounded-xl text-base sm:text-sm font-mono font-bold border focus:outline-hidden transition-all ${
                       isLight
-                        ? 'bg-zinc-50 border-zinc-300 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 text-zinc-900'
+                        ? 'bg-zinc-50 border-zinc-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-zinc-900'
                         : 'bg-zinc-800/80 border-zinc-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-950 text-white'
                     }`}
                   />
@@ -789,7 +789,7 @@ export function FinancialView({
                     onChange={(e) => setFormDate(e.target.value)}
                     className={`w-full px-3 py-2.5 sm:py-2 rounded-xl text-base sm:text-xs font-medium border focus:outline-hidden ${
                       isLight
-                        ? 'bg-zinc-50 border-zinc-300 focus:border-cyan-500 text-zinc-900'
+                        ? 'bg-zinc-50 border-zinc-300 focus:border-emerald-500 text-zinc-900'
                         : 'bg-zinc-800 border-zinc-700 focus:border-emerald-500 text-white'
                     }`}
                   />
@@ -807,7 +807,7 @@ export function FinancialView({
                     placeholder="Ex: Tintas, Peças, Sinal"
                     className={`w-full px-3 py-2.5 sm:py-2 rounded-xl text-base sm:text-xs font-medium border focus:outline-hidden ${
                       isLight
-                        ? 'bg-zinc-50 border-zinc-300 focus:border-cyan-500 text-zinc-900'
+                        ? 'bg-zinc-50 border-zinc-300 focus:border-emerald-500 text-zinc-900'
                         : 'bg-zinc-800 border-zinc-700 focus:border-emerald-500 text-white'
                     }`}
                   />
@@ -827,7 +827,7 @@ export function FinancialView({
                   }}
                   className={`w-full flex items-center justify-between px-3.5 py-3 sm:py-2.5 rounded-xl border text-base sm:text-sm font-semibold transition-all cursor-pointer ${
                     isLight
-                      ? 'bg-zinc-50 border-zinc-300 hover:border-cyan-500 text-zinc-900'
+                      ? 'bg-zinc-50 border-zinc-300 hover:border-emerald-500 text-zinc-900'
                       : 'bg-zinc-800/80 border-zinc-700 hover:border-emerald-500 text-white'
                   }`}
                 >
@@ -903,7 +903,7 @@ export function FinancialView({
           <div
             className={`relative w-full max-w-xs sm:max-w-sm rounded-2xl shadow-2xl border p-5 transition-all ${
               isLight
-                ? 'bg-white border-zinc-200 text-zinc-900 shadow-cyan-950/15'
+                ? 'bg-white border-zinc-200 text-zinc-900 shadow-emerald-950/15'
                 : 'bg-zinc-900 border-zinc-800 text-white shadow-black'
             }`}
           >
@@ -924,7 +924,7 @@ export function FinancialView({
             <div className="flex items-center gap-2.5 mb-4 pr-6">
               <div
                 className={`p-2.5 rounded-xl ${
-                  isLight ? 'bg-cyan-100 text-cyan-800' : 'bg-emerald-950/80 text-emerald-400'
+                  isLight ? 'bg-emerald-100 text-emerald-950 font-bold' : 'bg-emerald-950/80 text-emerald-400'
                 }`}
               >
                 <Wallet className="w-5 h-5" />
@@ -958,7 +958,7 @@ export function FinancialView({
                     className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold border transition-all cursor-pointer text-left ${
                       isSelected
                         ? isLight
-                          ? 'bg-cyan-50 border-cyan-500 text-cyan-900 shadow-xs ring-1 ring-cyan-400'
+                          ? 'bg-emerald-100 border-emerald-500 text-emerald-950 shadow-xs ring-1 ring-emerald-400 font-bold'
                           : 'bg-emerald-950/40 border-emerald-500 text-emerald-300 shadow-xs ring-1 ring-emerald-400'
                         : isLight
                         ? 'bg-zinc-50 border-zinc-200 hover:bg-zinc-100 text-zinc-800'
@@ -973,7 +973,7 @@ export function FinancialView({
                     </div>
 
                     {isSelected && (
-                      <Check className={`w-4 h-4 ${isLight ? 'text-cyan-700' : 'text-emerald-400'}`} />
+                      <Check className={`w-4 h-4 ${isLight ? 'text-emerald-800' : 'text-emerald-400'}`} />
                     )}
                   </button>
                 );

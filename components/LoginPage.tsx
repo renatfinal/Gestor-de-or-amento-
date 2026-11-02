@@ -38,7 +38,7 @@ export function LoginPage({
   onLoginSuccess,
   onOpenFirstAccess,
 }: LoginPageProps) {
-  const isLight = theme === 'light-cyan';
+  const isLight = theme !== 'dark-spring';
 
   // Modal "Acessar App" state
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -162,12 +162,12 @@ export function LoginPage({
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div
           className={`absolute -top-32 -left-32 w-96 h-96 rounded-full blur-3xl opacity-30 ${
-            isLight ? 'bg-cyan-400' : 'bg-[#00FF7F]'
+            isLight ? 'bg-emerald-300' : 'bg-[#00FF7F]'
           }`}
         />
         <div
           className={`absolute -bottom-32 -right-32 w-96 h-96 rounded-full blur-3xl opacity-20 ${
-            isLight ? 'bg-blue-400' : 'bg-emerald-600'
+            isLight ? 'bg-emerald-400' : 'bg-emerald-600'
           }`}
         />
         {/* Subtle grid pattern */}
@@ -187,7 +187,7 @@ export function LoginPage({
           <div
             className={`w-10 h-10 rounded-2xl flex items-center justify-center font-black shadow-md border ${
               isLight
-                ? 'bg-cyan-600 text-white border-cyan-400/40 shadow-cyan-600/20'
+                ? 'bg-[#00FF7F] text-black border-emerald-400 font-black shadow-emerald-500/20'
                 : 'bg-[#00FF7F] text-black border-[#00FF7F]/60 shadow-[#00FF7F]/20'
             }`}
           >
@@ -214,8 +214,8 @@ export function LoginPage({
         >
           {isLight ? (
             <>
-              <Moon className="w-4 h-4 text-cyan-600" />
-              <span className="text-xs">Modo Escuro</span>
+              <Moon className="w-4 h-4 text-emerald-800" />
+              <span className="text-xs font-bold text-black">Modo Escuro</span>
             </>
           ) : (
             <>
@@ -231,7 +231,7 @@ export function LoginPage({
         <div
           className={`w-full max-w-md rounded-3xl p-7 sm:p-9 border shadow-2xl backdrop-blur-xl transition-all text-center ${
             isLight
-              ? 'bg-white/95 border-zinc-200 text-zinc-900 shadow-cyan-950/10'
+              ? 'bg-white/95 border-zinc-200 text-zinc-900 shadow-emerald-950/10'
               : 'bg-zinc-950/90 border-zinc-800/90 text-white shadow-black/80'
           }`}
         >
@@ -240,7 +240,7 @@ export function LoginPage({
             <div
               className={`w-20 h-20 rounded-3xl flex flex-col items-center justify-center p-3 shadow-xl border relative transition-transform hover:scale-105 ${
                 isLight
-                  ? 'bg-gradient-to-br from-cyan-500 to-cyan-700 text-white border-cyan-300/40 shadow-cyan-600/30'
+                  ? 'bg-[#00FF7F] text-black border-emerald-400 font-black shadow-emerald-400/30'
                   : 'bg-gradient-to-br from-zinc-900 to-black text-[#00FF7F] border-[#00FF7F]/40 shadow-[#00FF7F]/20'
               }`}
             >
@@ -251,7 +251,7 @@ export function LoginPage({
               <span
                 className={`absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full border-2 ${
                   isLight
-                    ? 'bg-emerald-400 border-white'
+                    ? 'bg-emerald-600 border-white'
                     : 'bg-[#00FF7F] border-black animate-pulse'
                 }`}
               />
@@ -339,7 +339,7 @@ export function LoginPage({
           <div
             className={`relative w-full max-w-md rounded-2xl sm:rounded-3xl shadow-2xl border p-5 sm:p-7 my-auto transition-all ${
               isLight
-                ? 'bg-white border-zinc-200 text-zinc-900 shadow-cyan-950/15'
+                ? 'bg-white border-zinc-200 text-zinc-900 shadow-emerald-950/15'
                 : 'bg-zinc-900 border-zinc-800 text-white shadow-black'
             }`}
           >
@@ -357,7 +357,7 @@ export function LoginPage({
             <div className="flex items-center gap-3 mb-5 pr-8">
               <div
                 className={`p-2.5 sm:p-3 rounded-2xl ${
-                  isLight ? 'bg-cyan-100 text-cyan-800' : 'bg-emerald-950/80 text-[#00FF7F]'
+                  isLight ? 'bg-emerald-100 text-emerald-950 font-black' : 'bg-emerald-950/80 text-[#00FF7F]'
                 }`}
               >
                 <KeyRound className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -397,7 +397,7 @@ export function LoginPage({
                     placeholder="ex: seu.email@empresa.com"
                     className={`w-full pl-9 pr-3.5 py-3 sm:py-2.5 rounded-xl text-base sm:text-sm border focus:outline-hidden transition-all ${
                       isLight
-                        ? 'bg-zinc-50 border-zinc-300 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 text-zinc-900'
+                        ? 'bg-zinc-50 border-zinc-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-zinc-900'
                         : 'bg-zinc-800/80 border-zinc-700 focus:border-[#00FF7F] focus:ring-2 focus:ring-[#00FF7F]/20 text-white'
                     }`}
                   />
@@ -421,7 +421,7 @@ export function LoginPage({
                     }}
                     className={`text-[11px] font-semibold underline underline-offset-2 transition-colors cursor-pointer ${
                       isLight
-                        ? 'text-cyan-700 hover:text-cyan-900'
+                        ? 'text-emerald-700 hover:text-emerald-900'
                         : 'text-[#00FF7F] hover:text-[#00e672]'
                     }`}
                   >
@@ -440,7 +440,7 @@ export function LoginPage({
                     placeholder="••••••••"
                     className={`w-full pl-9 pr-10 py-3 sm:py-2.5 rounded-xl text-base sm:text-sm border focus:outline-hidden transition-all ${
                       isLight
-                        ? 'bg-zinc-50 border-zinc-300 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 text-zinc-900'
+                        ? 'bg-zinc-50 border-zinc-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-zinc-900'
                         : 'bg-zinc-800/80 border-zinc-700 focus:border-[#00FF7F] focus:ring-2 focus:ring-[#00FF7F]/20 text-white'
                     }`}
                   />
@@ -460,7 +460,7 @@ export function LoginPage({
               <div
                 className={`p-2.5 rounded-xl text-[11px] flex items-center justify-between gap-2 border ${
                   isLight
-                    ? 'bg-cyan-50/70 border-cyan-200 text-cyan-900'
+                    ? 'bg-emerald-50/70 border-emerald-200 text-emerald-950'
                     : 'bg-zinc-800/50 border-zinc-700/60 text-zinc-400'
                 }`}
               >
@@ -469,7 +469,7 @@ export function LoginPage({
                   type="button"
                   onClick={handleQuickFillDemo}
                   className={`text-[11px] font-black underline cursor-pointer ${
-                    isLight ? 'text-cyan-800' : 'text-[#00FF7F]'
+                    isLight ? 'text-emerald-800' : 'text-[#00FF7F]'
                   }`}
                 >
                   Preencher dados
@@ -581,7 +581,7 @@ export function LoginPage({
             <div className="flex items-center gap-2.5 mb-4">
               <div
                 className={`p-2.5 rounded-xl ${
-                  isLight ? 'bg-cyan-100 text-cyan-800' : 'bg-zinc-800 text-[#00FF7F]'
+                  isLight ? 'bg-emerald-100 text-emerald-950 font-bold' : 'bg-zinc-800 text-[#00FF7F]'
                 }`}
               >
                 <KeyRound className="w-5 h-5" />

@@ -30,13 +30,13 @@ export function Header({
   profile,
   totalBudgets,
 }: HeaderProps) {
-  const isLight = theme === 'light-cyan';
+  const isLight = theme !== 'dark-spring';
 
   return (
     <header
       className={`sticky top-0 z-40 w-full border-b backdrop-blur-md transition-colors ${
         isLight
-          ? 'bg-white/95 border-zinc-200/80 text-zinc-900 shadow-xs'
+          ? 'bg-zinc-100/95 border-zinc-300 text-zinc-950 shadow-xs'
           : 'bg-black/90 border-zinc-800 text-zinc-100 shadow-md'
       }`}
     >
@@ -46,7 +46,7 @@ export function Header({
           <div
             className={`w-11 h-11 rounded-2xl flex items-center justify-center font-black text-lg shadow-sm border transition-all ${
               isLight
-                ? 'bg-gradient-to-br from-cyan-500 to-cyan-700 text-white border-cyan-400/40 shadow-cyan-500/20'
+                ? 'bg-[#00FF7F] text-black border-emerald-400 font-black shadow-emerald-500/20'
                 : 'bg-gradient-to-br from-emerald-500 to-emerald-700 text-black border-emerald-400/50 shadow-emerald-500/20'
             }`}
           >
@@ -64,7 +64,7 @@ export function Header({
               <span
                 className={`hidden sm:inline-block text-[10px] uppercase font-black tracking-wider px-2.5 py-0.5 rounded-full ${
                   isLight
-                    ? 'bg-cyan-100 text-cyan-950 border border-cyan-300'
+                    ? 'bg-emerald-100 text-emerald-950 border border-emerald-300'
                     : 'bg-emerald-950 text-emerald-300 border border-emerald-800/40'
                 }`}
               >
@@ -79,25 +79,25 @@ export function Header({
 
         {/* Right side controls: Theme Switcher & Profile button */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Theme switcher: Claro com Azul Ciano vs Escuro com Preto & Verde Primavera */}
+          {/* Theme switcher: Claro com Verde Primavera vs Escuro com Preto & Verde Primavera */}
           <button
             type="button"
             onClick={onToggleTheme}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-black border transition-all shadow-xs ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-black border transition-all shadow-xs cursor-pointer ${
               isLight
-                ? 'bg-cyan-100/90 border-cyan-400 text-black hover:bg-cyan-200'
+                ? 'bg-emerald-100/90 border-emerald-400 text-black hover:bg-emerald-200'
                 : 'bg-zinc-900 border-zinc-700 text-emerald-400 hover:bg-zinc-800 hover:border-emerald-500/60'
             }`}
             title={
               isLight
                 ? 'Ativar Modo Escuro (Preto & Verde Primavera)'
-                : 'Ativar Modo Claro (Azul Ciano)'
+                : 'Ativar Modo Claro (Fundo Cinza Claro & Verde Primavera)'
             }
           >
             {isLight ? (
               <>
-                <Sun className="w-4 h-4 text-cyan-800" />
-                <span className="hidden md:inline text-black">Claro (Azul Ciano)</span>
+                <Sun className="w-4 h-4 text-emerald-800" />
+                <span className="hidden md:inline text-black font-black">Claro (Verde Primavera)</span>
               </>
             ) : (
               <>
@@ -114,12 +114,12 @@ export function Header({
               onClick={onOpenDatabaseTables}
               className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-black border transition-all cursor-pointer shadow-xs ${
                 isLight
-                  ? 'bg-cyan-50 border-cyan-300 text-cyan-900 hover:bg-cyan-100'
+                  ? 'bg-emerald-50 border-emerald-300 text-emerald-950 hover:bg-emerald-100'
                   : 'bg-emerald-950/40 border-emerald-700/60 text-emerald-300 hover:bg-emerald-950/70'
               }`}
               title="Abrir Banco de Dados e Tabelas Organizadoras (Check-lists, Eventos, Orçamentos)"
             >
-              <Database className="w-3.5 h-3.5 text-emerald-500 animate-pulse" />
+              <Database className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 animate-pulse" />
               <span className="hidden sm:inline">Banco & Tabelas</span>
             </button>
           )}
@@ -128,7 +128,7 @@ export function Header({
           <button
             type="button"
             onClick={onOpenProfile}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
               isLight
                 ? 'border-zinc-400 bg-white hover:bg-zinc-100 text-black shadow-xs'
                 : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-800 text-zinc-200'
@@ -137,7 +137,7 @@ export function Header({
           >
             <div
               className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-black ${
-                isLight ? 'bg-cyan-200 text-black' : 'bg-emerald-950 text-emerald-300'
+                isLight ? 'bg-emerald-200 text-black' : 'bg-emerald-950 text-emerald-300'
               }`}
             >
               {profile.name ? profile.name.charAt(0).toUpperCase() : <User className="w-3.5 h-3.5" />}

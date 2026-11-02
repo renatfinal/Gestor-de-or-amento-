@@ -2,14 +2,14 @@
 
 import React, { useRef, useState, useEffect } from 'react';
 import { Camera, Upload, X, Check, RefreshCw, AlertCircle } from 'lucide-react';
-import { VehiclePhoto } from '@/lib/types';
+import { ThemeMode, VehiclePhoto } from '@/lib/types';
 import { compressImage, savePhotoToIndexedDb } from '@/lib/imageStorage';
 
 interface CameraCaptureModalProps {
   isOpen: boolean;
   onClose: () => void;
   onPhotoCaptured: (photo: VehiclePhoto) => void;
-  theme: 'light-cyan' | 'dark-spring';
+  theme: ThemeMode;
 }
 
 export function CameraCaptureModal({
@@ -26,7 +26,7 @@ export function CameraCaptureModal({
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [caption, setCaption] = useState<string>('');
 
-  const isLight = theme === 'light-cyan';
+  const isLight = theme !== 'dark-spring';
 
   const stopCamera = React.useCallback(() => {
     if (stream) {
@@ -158,7 +158,7 @@ export function CameraCaptureModal({
         {/* Header with X */}
         <div className="flex items-center justify-between pb-4 border-b border-zinc-200 dark:border-zinc-800">
           <div className="flex items-center gap-2">
-            <div className={`p-2 rounded-xl ${isLight ? 'bg-cyan-100 text-cyan-700' : 'bg-emerald-950/70 text-emerald-400'}`}>
+            <div className={`p-2 rounded-xl ${isLight ? 'bg-emerald-100 text-emerald-950 font-black' : 'bg-emerald-950/70 text-emerald-400'}`}>
               <Camera className="w-5 h-5" />
             </div>
             <div>
@@ -199,7 +199,7 @@ export function CameraCaptureModal({
                   placeholder="Ex: Para-choque dianteiro trincado, arranhão na porta..."
                   className={`w-full px-3.5 py-2.5 rounded-xl text-sm border focus:outline-hidden transition-colors ${
                     isLight
-                      ? 'bg-zinc-50 border-zinc-300 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200'
+                      ? 'bg-zinc-50 border-zinc-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-zinc-900'
                       : 'bg-zinc-800/80 border-zinc-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-950 text-white'
                   }`}
                 />
@@ -224,13 +224,13 @@ export function CameraCaptureModal({
                 <button
                   type="button"
                   onClick={handleSavePhoto}
-                  className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2 shadow-md transition-all ${
+                  className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-black flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer ${
                     isLight
-                      ? 'bg-cyan-600 hover:bg-cyan-700 shadow-cyan-600/20'
-                      : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20'
+                      ? 'bg-[#00FF7F] hover:bg-[#00e676] text-black shadow-emerald-500/20'
+                      : 'bg-emerald-600 hover:bg-emerald-700 text-black shadow-emerald-600/20'
                   }`}
                 >
-                  <Check className="w-4 h-4" />
+                  <Check className="w-4 h-4 text-black" />
                   Salvar na Galeria
                 </button>
               </div>
@@ -270,22 +270,22 @@ export function CameraCaptureModal({
                   <button
                     type="button"
                     onClick={takeSnapshot}
-                    className={`col-span-2 py-3 px-4 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-2 shadow-lg transition-transform active:scale-98 ${
+                    className={`col-span-2 py-3 px-4 rounded-xl text-sm font-black flex items-center justify-center gap-2 shadow-lg transition-transform active:scale-98 cursor-pointer ${
                       isLight
-                        ? 'bg-cyan-600 hover:bg-cyan-700 shadow-cyan-600/30'
-                        : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/30'
+                        ? 'bg-[#00FF7F] hover:bg-[#00e676] text-black shadow-emerald-500/30'
+                        : 'bg-emerald-600 hover:bg-emerald-700 text-black shadow-emerald-600/30'
                     }`}
                   >
-                    <Camera className="w-5 h-5" />
+                    <Camera className="w-5 h-5 text-black" />
                     Fotografar Avaria
                   </button>
                 ) : (
                   <button
                     type="button"
                     onClick={startCamera}
-                    className={`py-3 px-4 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 border transition-colors ${
+                    className={`py-3 px-4 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 border transition-colors cursor-pointer ${
                       isLight
-                        ? 'bg-cyan-50 border-cyan-200 text-cyan-800 hover:bg-cyan-100'
+                        ? 'bg-emerald-100 border-emerald-300 text-emerald-950 hover:bg-emerald-200'
                         : 'bg-emerald-950/40 border-emerald-800/60 text-emerald-300 hover:bg-emerald-950/70'
                     }`}
                   >

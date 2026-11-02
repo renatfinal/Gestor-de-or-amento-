@@ -17,7 +17,7 @@ import { formatBRL } from '@/lib/formatters';
 
 interface BalanceteViewProps {
   transactions: FinancialTransaction[];
-  theme: 'light-cyan' | 'dark-spring';
+  theme: ThemeMode;
 }
 
 const MONTHS_LIST = [
@@ -36,7 +36,7 @@ const MONTHS_LIST = [
 ];
 
 export function BalanceteView({ transactions, theme }: BalanceteViewProps) {
-  const isLight = theme === 'light-cyan';
+  const isLight = theme !== 'dark-spring';
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
 
@@ -90,7 +90,7 @@ export function BalanceteView({ transactions, theme }: BalanceteViewProps) {
       <div
         className={`p-6 rounded-2xl md:rounded-3xl border transition-all ${
           isLight
-            ? 'bg-gradient-to-br from-cyan-900 to-slate-900 text-white border-cyan-800 shadow-xl'
+            ? 'bg-gradient-to-br from-zinc-900 via-zinc-950 to-black text-white border-emerald-500/40 shadow-xl'
             : 'bg-gradient-to-br from-zinc-900 via-zinc-950 to-black text-white border-zinc-800 shadow-2xl'
         }`}
       >
@@ -191,7 +191,7 @@ export function BalanceteView({ transactions, theme }: BalanceteViewProps) {
         <div className="flex items-center justify-between pb-4 border-b border-zinc-200 dark:border-zinc-800">
           <div>
             <h3 className="font-bold text-lg flex items-center gap-2">
-              <Layers className={`w-5 h-5 ${isLight ? 'text-cyan-600' : 'text-emerald-400'}`} />
+              <Layers className={`w-5 h-5 ${isLight ? 'text-emerald-700' : 'text-emerald-400'}`} />
               Demonstrativo Mensal ({selectedYear})
             </h3>
             <p className="text-xs text-zinc-500 dark:text-zinc-400">

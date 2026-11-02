@@ -36,7 +36,7 @@ interface BudgetModalProps {
   presetDate?: string; // DD/MM/YYYY
   onClose: () => void;
   onSave: (budget: Budget) => void;
-  theme: 'light-cyan' | 'dark-spring';
+  theme: ThemeMode;
 }
 
 export function BudgetModal({
@@ -47,7 +47,7 @@ export function BudgetModal({
   onSave,
   theme,
 }: BudgetModalProps) {
-  const isLight = theme === 'light-cyan';
+  const isLight = theme !== 'dark-spring';
 
   // Form State initialized directly from props
   const [clientName, setClientName] = useState(initialBudget?.clientName || '');
@@ -195,7 +195,7 @@ export function BudgetModal({
           <div className="flex items-center gap-3">
             <div
               className={`p-2.5 rounded-xl ${
-                isLight ? 'bg-cyan-100 text-cyan-950 font-bold' : 'bg-emerald-950/80 text-emerald-400'
+                isLight ? 'bg-emerald-100 text-emerald-950 font-bold' : 'bg-emerald-950/80 text-emerald-400'
               }`}
             >
               <Car className="w-5 h-5" />
@@ -215,7 +215,7 @@ export function BudgetModal({
           <button
             onClick={onClose}
             type="button"
-            className="p-2 rounded-full text-black hover:text-cyan-800 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-200/50 dark:hover:bg-zinc-800 transition-colors"
+            className="p-2 rounded-full text-black hover:text-emerald-800 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-200/50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
             title="Fechar (X)"
           >
             <X className="w-6 h-6" />
@@ -262,7 +262,7 @@ export function BudgetModal({
                     placeholder="Ex: João da Silva Sauro"
                     className={`w-full pl-9 pr-3.5 py-3 sm:py-2.5 rounded-xl text-base sm:text-sm font-bold border focus:outline-hidden transition-all ${
                       isLight
-                        ? 'bg-white border-zinc-400 focus:border-cyan-600 focus:ring-2 focus:ring-cyan-200 text-black placeholder:text-zinc-500'
+                        ? 'bg-white border-zinc-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-black placeholder:text-zinc-500'
                         : 'bg-zinc-800/80 border-zinc-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-950 text-white'
                     }`}
                   />
@@ -284,7 +284,7 @@ export function BudgetModal({
                     placeholder="(XX) XXXXX-XXXX"
                     className={`w-full pl-9 pr-3.5 py-3 sm:py-2.5 rounded-xl text-base sm:text-sm border focus:outline-hidden transition-all font-mono font-bold ${
                       isLight
-                        ? 'bg-white border-zinc-400 focus:border-cyan-600 focus:ring-2 focus:ring-cyan-200 text-black placeholder:text-zinc-500'
+                        ? 'bg-white border-zinc-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-black placeholder:text-zinc-500'
                         : 'bg-zinc-800/80 border-zinc-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-950 text-white'
                     }`}
                   />
@@ -318,7 +318,7 @@ export function BudgetModal({
                   placeholder="Ex: Fiat Argo 1.3 Trekking"
                   className={`w-full px-3.5 py-2.5 rounded-xl text-sm font-bold border focus:outline-hidden transition-all ${
                     isLight
-                      ? 'bg-white border-zinc-400 focus:border-cyan-600 focus:ring-2 focus:ring-cyan-200 text-black placeholder:text-zinc-500'
+                      ? 'bg-white border-zinc-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-black placeholder:text-zinc-500'
                       : 'bg-zinc-800/80 border-zinc-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-950 text-white'
                   }`}
                 />
@@ -340,7 +340,7 @@ export function BudgetModal({
                   maxLength={8}
                   className={`w-full px-3.5 py-2.5 rounded-xl text-sm border uppercase font-mono font-black tracking-wider focus:outline-hidden transition-all ${
                     isLight
-                      ? 'bg-white border-zinc-400 focus:border-cyan-600 focus:ring-2 focus:ring-cyan-200 text-black placeholder:text-zinc-500'
+                      ? 'bg-white border-zinc-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-black placeholder:text-zinc-500'
                       : 'bg-zinc-800/80 border-zinc-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-950 text-white'
                   }`}
                 />
@@ -361,7 +361,7 @@ export function BudgetModal({
                   maxLength={4}
                   className={`w-full px-3.5 py-2.5 rounded-xl text-sm font-bold border focus:outline-hidden transition-all ${
                     isLight
-                      ? 'bg-white border-zinc-400 focus:border-cyan-600 focus:ring-2 focus:ring-cyan-200 text-black placeholder:text-zinc-500'
+                      ? 'bg-white border-zinc-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-black placeholder:text-zinc-500'
                       : 'bg-zinc-800/80 border-zinc-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-950 text-white'
                   }`}
                 />
@@ -382,7 +382,7 @@ export function BudgetModal({
                   placeholder="Ex: Preto Metálico, Prata, Branco..."
                   className={`w-full px-3.5 py-2.5 rounded-xl text-sm font-bold border focus:outline-hidden transition-all ${
                     isLight
-                      ? 'bg-white border-zinc-400 focus:border-cyan-600 focus:ring-2 focus:ring-cyan-200 text-black placeholder:text-zinc-500'
+                      ? 'bg-white border-zinc-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-black placeholder:text-zinc-500'
                       : 'bg-zinc-800/80 border-zinc-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-950 text-white'
                   }`}
                 />
@@ -406,7 +406,7 @@ export function BudgetModal({
                 placeholder="Descreva o serviço: Ex: Funilaria na lateral esquerda, pintura em estufa do para-choque traseiro, polimento técnico cristalizado..."
                 className={`w-full px-3.5 py-2.5 rounded-xl text-sm font-bold border focus:outline-hidden transition-all ${
                   isLight
-                    ? 'bg-white border-zinc-400 focus:border-cyan-600 focus:ring-2 focus:ring-cyan-200 text-black placeholder:text-zinc-500'
+                    ? 'bg-white border-zinc-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-black placeholder:text-zinc-500'
                     : 'bg-zinc-800/80 border-zinc-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-950 text-white'
                 }`}
               />
@@ -425,7 +425,7 @@ export function BudgetModal({
                 placeholder="Ex: Tinta original de fábrica, cliente fornecerá peças, urgência na entrega..."
                 className={`w-full px-3.5 py-2.5 rounded-xl text-sm font-bold border focus:outline-hidden transition-all ${
                   isLight
-                    ? 'bg-white border-zinc-400 focus:border-cyan-600 focus:ring-2 focus:ring-cyan-200 text-black placeholder:text-zinc-500'
+                    ? 'bg-white border-zinc-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-black placeholder:text-zinc-500'
                     : 'bg-zinc-800/80 border-zinc-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-950 text-white'
                 }`}
               />
@@ -455,7 +455,7 @@ export function BudgetModal({
                   placeholder="0,00"
                   className={`w-full pl-10 pr-3.5 py-2.5 rounded-xl text-sm font-black border focus:outline-hidden transition-all ${
                     isLight
-                      ? 'bg-white border-zinc-400 focus:border-cyan-600 focus:ring-2 focus:ring-cyan-200 text-black placeholder:text-zinc-500'
+                      ? 'bg-white border-zinc-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-black placeholder:text-zinc-500'
                       : 'bg-zinc-800/80 border-zinc-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-950 text-white'
                   }`}
                 />
@@ -482,7 +482,7 @@ export function BudgetModal({
                   maxLength={10}
                   className={`w-full pl-9 pr-3.5 py-2.5 rounded-xl text-sm border font-mono font-bold focus:outline-hidden transition-all ${
                     isLight
-                      ? 'bg-white border-zinc-400 focus:border-cyan-600 focus:ring-2 focus:ring-cyan-200 text-black placeholder:text-zinc-500'
+                      ? 'bg-white border-zinc-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-black placeholder:text-zinc-500'
                       : 'bg-zinc-800/80 border-zinc-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-950 text-white'
                   }`}
                 />
@@ -506,7 +506,7 @@ export function BudgetModal({
                 onClick={() => setIsStatusDropdownOpen((prev) => !prev)}
                 className={`w-full px-3.5 py-2.5 rounded-xl text-sm font-bold border flex items-center justify-between transition-all ${
                   isLight
-                    ? 'bg-white border-zinc-400 focus:border-cyan-600 focus:ring-2 focus:ring-cyan-200 text-black shadow-xs'
+                    ? 'bg-white border-zinc-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-black shadow-xs'
                     : 'bg-zinc-800/80 border-zinc-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-950 text-white'
                 }`}
               >
@@ -552,7 +552,7 @@ export function BudgetModal({
                           className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left text-xs font-bold transition-all ${
                             isSelected
                               ? isLight
-                                ? 'bg-cyan-100 text-cyan-950 font-black border border-cyan-300'
+                                ? 'bg-emerald-100 text-emerald-950 font-black border border-emerald-300'
                                 : 'bg-emerald-950/70 text-emerald-300 font-black border border-emerald-700/60'
                               : isLight
                               ? 'hover:bg-zinc-100 text-black'
@@ -604,7 +604,7 @@ export function BudgetModal({
                     className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border transition-all ${
                       isSelected
                         ? isLight
-                          ? 'border-cyan-600 bg-cyan-100 text-cyan-950 ring-2 ring-cyan-400/40 shadow-xs'
+                          ? 'border-emerald-500 bg-emerald-100 text-emerald-950 ring-2 ring-emerald-400/40 shadow-xs'
                           : 'border-emerald-500 bg-emerald-950/70 text-emerald-200 ring-2 ring-emerald-500/40 shadow-xs'
                         : isLight
                         ? 'border-zinc-300 bg-white hover:bg-zinc-100 text-black'
@@ -639,13 +639,13 @@ export function BudgetModal({
               <button
                 type="button"
                 onClick={() => setIsCameraModalOpen(true)}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-black transition-all shadow-xs ${
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-black transition-all shadow-xs cursor-pointer ${
                   isLight
-                    ? 'bg-cyan-100 hover:bg-cyan-200 text-cyan-950 border border-cyan-400'
+                    ? 'bg-emerald-100 hover:bg-emerald-200 text-emerald-950 border border-emerald-400'
                     : 'bg-emerald-950/60 hover:bg-emerald-950 text-emerald-300 border border-emerald-800/70'
                 }`}
               >
-                <Camera className="w-4 h-4" />
+                <Camera className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 Tirar / Enviar Foto
               </button>
             </div>
@@ -655,7 +655,7 @@ export function BudgetModal({
                 onClick={() => setIsCameraModalOpen(true)}
                 className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-colors ${
                   isLight
-                    ? 'border-zinc-300 hover:border-cyan-600 bg-zinc-50'
+                    ? 'border-zinc-300 hover:border-emerald-500 bg-zinc-50'
                     : 'border-zinc-800 hover:border-emerald-500 bg-zinc-900/50'
                 }`}
               >
@@ -728,7 +728,7 @@ export function BudgetModal({
                 }`}
                 title="Baixar Orçamento em PDF"
               >
-                <Download className={`w-4 h-4 ${isLight ? 'text-cyan-700' : 'text-cyan-500'}`} />
+                <Download className={`w-4 h-4 ${isLight ? 'text-emerald-700' : 'text-emerald-400'}`} />
                 Baixar em PDF
               </button>
 
@@ -764,13 +764,13 @@ export function BudgetModal({
 
               <button
                 type="submit"
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black text-white shadow-md transition-all active:scale-98 ${
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black shadow-md transition-all active:scale-98 cursor-pointer ${
                   isLight
-                    ? 'bg-cyan-700 hover:bg-cyan-800 shadow-cyan-700/30'
-                    : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/30'
+                    ? 'bg-[#00FF7F] hover:bg-[#00e676] text-black shadow-emerald-500/20'
+                    : 'bg-emerald-600 hover:bg-emerald-700 text-black shadow-emerald-600/30'
                 }`}
               >
-                <Save className="w-4 h-4" />
+                <Save className="w-4 h-4 text-black" />
                 Salvar Orçamento
               </button>
             </div>

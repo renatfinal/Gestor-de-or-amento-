@@ -23,14 +23,14 @@ export function BottomNav({
   onOpenNewBudget,
   theme,
 }: BottomNavProps) {
-  const isLight = theme === 'light-cyan';
+  const isLight = theme !== 'dark-spring';
 
   return (
     <div className="fixed bottom-0 inset-x-0 z-40 p-2 sm:p-4 pointer-events-none">
       <nav
         className={`max-w-3xl mx-auto rounded-2xl md:rounded-3xl border shadow-2xl backdrop-blur-lg pointer-events-auto p-1.5 sm:p-2 transition-all ${
           isLight
-            ? 'bg-white/95 border-zinc-200/90 text-zinc-800 shadow-cyan-900/10'
+            ? 'bg-zinc-100/95 border-zinc-300 text-zinc-900 shadow-emerald-950/10'
             : 'bg-black/95 border-zinc-800 text-zinc-200 shadow-emerald-950/20'
         }`}
       >
@@ -42,9 +42,9 @@ export function BottomNav({
             className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl text-center transition-all ${
               activeTab === 'calendar'
                 ? isLight
-                  ? 'bg-cyan-50 text-cyan-800 font-bold'
+                  ? 'bg-emerald-100 text-emerald-950 font-black border border-emerald-300'
                   : 'bg-zinc-800/90 text-emerald-400 font-bold'
-                : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+                : 'text-zinc-600 hover:text-black dark:text-zinc-400 dark:hover:text-white'
             }`}
           >
             <Calendar className="w-5 h-5 mb-0.5" />
@@ -57,18 +57,18 @@ export function BottomNav({
             onClick={onOpenNewBudget}
             className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl text-center transition-all group ${
               isLight
-                ? 'hover:bg-cyan-50 text-cyan-700'
+                ? 'hover:bg-emerald-100/60 text-emerald-950'
                 : 'hover:bg-zinc-800/80 text-emerald-400'
             }`}
           >
             <div
               className={`p-1 rounded-lg ${
-                isLight ? 'bg-cyan-600 text-white shadow-xs' : 'bg-emerald-600 text-black shadow-xs'
+                isLight ? 'bg-[#00FF7F] text-black shadow-xs font-black' : 'bg-emerald-600 text-black shadow-xs'
               }`}
             >
               <FilePlus className="w-4 h-4" />
             </div>
-            <span className="text-[10px] sm:text-[11px] font-bold leading-tight mt-0.5">
+            <span className="text-[10px] sm:text-[11px] font-black leading-tight mt-0.5">
               Novo Orçamento
             </span>
           </button>
@@ -80,9 +80,9 @@ export function BottomNav({
             className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl text-center transition-all ${
               activeTab === 'clients'
                 ? isLight
-                  ? 'bg-cyan-50 text-cyan-800 font-bold'
+                  ? 'bg-emerald-100 text-emerald-950 font-black border border-emerald-300'
                   : 'bg-zinc-800/90 text-emerald-400 font-bold'
-                : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+                : 'text-zinc-600 hover:text-black dark:text-zinc-400 dark:hover:text-white'
             }`}
           >
             <Users className="w-5 h-5 mb-0.5" />
@@ -96,9 +96,9 @@ export function BottomNav({
             className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl text-center transition-all ${
               activeTab === 'financial'
                 ? isLight
-                  ? 'bg-cyan-50 text-cyan-800 font-bold'
+                  ? 'bg-emerald-100 text-emerald-950 font-black border border-emerald-300'
                   : 'bg-zinc-800/90 text-emerald-400 font-bold'
-                : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+                : 'text-zinc-600 hover:text-black dark:text-zinc-400 dark:hover:text-white'
             }`}
           >
             <ArrowUpDown className="w-5 h-5 mb-0.5" />
@@ -112,9 +112,9 @@ export function BottomNav({
             className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl text-center transition-all ${
               activeTab === 'balance'
                 ? isLight
-                  ? 'bg-cyan-50 text-cyan-800 font-bold'
+                  ? 'bg-emerald-100 text-emerald-950 font-black border border-emerald-300'
                   : 'bg-zinc-800/90 text-emerald-400 font-bold'
-                : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+                : 'text-zinc-600 hover:text-black dark:text-zinc-400 dark:hover:text-white'
             }`}
           >
             <BarChart3 className="w-5 h-5 mb-0.5" />

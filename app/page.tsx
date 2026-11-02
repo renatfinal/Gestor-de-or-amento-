@@ -60,7 +60,7 @@ export default function HomePage() {
     () => false
   );
 
-  // Theme: 'light-cyan' (Claro com Azul Ciano) | 'dark-spring' (Preto com Verde Primavera)
+  // Theme: 'light-spring' (Claro com Fundo Cinza Claro & Verde Primavera) | 'dark-spring' (Preto com Verde Primavera)
   const [theme, setTheme] = useState<ThemeMode>(() => getStoredTheme());
 
   // Navigation tab
@@ -207,7 +207,7 @@ export default function HomePage() {
   }, [session?.email, profile.email]);
 
   const handleToggleTheme = () => {
-    const newTheme: ThemeMode = theme === 'dark-spring' ? 'light-cyan' : 'dark-spring';
+    const newTheme: ThemeMode = theme === 'dark-spring' ? 'light-spring' : 'dark-spring';
     setTheme(newTheme);
     saveStoredTheme(newTheme);
   };
@@ -414,7 +414,7 @@ export default function HomePage() {
     setIsBudgetModalOpen(true);
   };
 
-  const isLight = theme === 'light-cyan';
+  const isLight = theme !== 'dark-spring';
 
   if (!mounted) {
     return (
@@ -489,7 +489,7 @@ export default function HomePage() {
   return (
     <div
       className={`min-h-screen transition-colors flex flex-col pb-28 ${
-        isLight ? 'bg-zinc-50 text-black font-medium' : 'bg-black text-zinc-100'
+        isLight ? 'bg-zinc-100 text-black font-medium' : 'bg-black text-zinc-100'
       }`}
     >
       {/* Top Header */}
@@ -545,13 +545,13 @@ export default function HomePage() {
               <button
                 type="button"
                 onClick={() => handleOpenNewBudget()}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black text-white shadow-md transition-all active:scale-98 ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black shadow-md transition-all active:scale-98 ${
                   isLight
-                    ? 'bg-cyan-700 hover:bg-cyan-800 shadow-cyan-900/20'
-                    : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/30'
+                    ? 'bg-[#00FF7F] hover:bg-[#00e676] text-black shadow-emerald-500/20'
+                    : 'bg-emerald-600 hover:bg-emerald-700 text-black shadow-emerald-600/30'
                 }`}
               >
-                <FilePlus className="w-4 h-4" />
+                <FilePlus className="w-4 h-4 text-black" />
                 <span>+ Novo Orçamento</span>
               </button>
 
@@ -708,13 +708,13 @@ export default function HomePage() {
           <div
             className={`flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-xl border text-sm font-semibold ${
               isLight
-                ? 'bg-white text-zinc-900 border-cyan-300 shadow-cyan-900/10'
+                ? 'bg-white text-zinc-900 border-emerald-400 shadow-emerald-950/10'
                 : 'bg-zinc-900 text-white border-emerald-500/50 shadow-emerald-950/40'
             }`}
           >
             <span
               className={`w-2 h-2 rounded-full ${
-                isLight ? 'bg-cyan-600' : 'bg-emerald-400'
+                isLight ? 'bg-[#00FF7F]' : 'bg-emerald-400'
               }`}
             />
             <span>{toastMessage}</span>

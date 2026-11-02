@@ -15,8 +15,8 @@ export function generateBudgetPdf(budget: Budget): jsPDF {
   doc.setFillColor(15, 23, 42); // Dark slate
   doc.rect(0, 0, pageWidth, 46, 'F');
 
-  // Accent stripe (cyan / spring green tint)
-  doc.setFillColor(14, 165, 233);
+  // Accent stripe (Verde Primavera / Spring Green #00FF7F)
+  doc.setFillColor(0, 255, 127);
   doc.rect(0, 46, pageWidth, 3, 'F');
 
   // Header Title

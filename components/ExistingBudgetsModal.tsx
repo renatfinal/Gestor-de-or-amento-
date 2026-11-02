@@ -24,7 +24,7 @@ interface ExistingBudgetsModalProps {
   budgets: Budget[];
   onClose: () => void;
   onSelectBudget: (budget: Budget) => void;
-  theme: 'light-cyan' | 'dark-spring';
+  theme: ThemeMode;
 }
 
 export function ExistingBudgetsModal({
@@ -34,7 +34,7 @@ export function ExistingBudgetsModal({
   onSelectBudget,
   theme,
 }: ExistingBudgetsModalProps) {
-  const isLight = theme === 'light-cyan';
+  const isLight = theme !== 'dark-spring';
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('todos');
 
@@ -69,7 +69,7 @@ export function ExistingBudgetsModal({
           <div className="flex items-center gap-3">
             <div
               className={`p-3 rounded-2xl ${
-                isLight ? 'bg-cyan-100 text-cyan-800' : 'bg-emerald-950 text-emerald-400'
+                isLight ? 'bg-emerald-100 text-emerald-950 font-bold' : 'bg-emerald-950 text-emerald-400'
               }`}
             >
               <Wrench className="w-6 h-6" />
@@ -105,7 +105,7 @@ export function ExistingBudgetsModal({
               placeholder="Buscar por cliente, veículo, placa ou descrição do serviço..."
               className={`w-full pl-10 pr-4 py-2 rounded-xl text-sm font-medium border focus:outline-hidden transition-all ${
                 isLight
-                  ? 'bg-white border-zinc-300 focus:border-cyan-600 focus:ring-2 focus:ring-cyan-200 text-black placeholder:text-zinc-400'
+                  ? 'bg-white border-zinc-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-black placeholder:text-zinc-400'
                   : 'bg-zinc-800 border-zinc-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-950 text-white placeholder:text-zinc-500'
               }`}
             />
@@ -119,8 +119,8 @@ export function ExistingBudgetsModal({
               className={`px-3 py-1.5 rounded-xl whitespace-nowrap transition-all border ${
                 statusFilter === 'todos'
                   ? isLight
-                    ? 'bg-cyan-600 text-white border-cyan-600'
-                    : 'bg-emerald-600 text-black border-emerald-500'
+                    ? 'bg-[#00FF7F] text-black font-black border-emerald-400 shadow-xs'
+                    : 'bg-emerald-600 text-black font-black border-emerald-500'
                   : isLight
                   ? 'bg-white text-zinc-700 border-zinc-300 hover:bg-zinc-100'
                   : 'bg-zinc-800 text-zinc-300 border-zinc-700 hover:bg-zinc-750'
@@ -141,7 +141,7 @@ export function ExistingBudgetsModal({
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl whitespace-nowrap transition-all border ${
                     isSelected
                       ? isLight
-                        ? 'bg-cyan-100 text-cyan-950 border-cyan-400 ring-2 ring-cyan-200'
+                        ? 'bg-emerald-100 text-emerald-950 border-emerald-400 ring-2 ring-emerald-200 font-bold'
                         : 'bg-emerald-950 text-emerald-300 border-emerald-600 ring-2 ring-emerald-900'
                       : isLight
                       ? 'bg-white text-zinc-700 border-zinc-300 hover:bg-zinc-100'
@@ -180,7 +180,7 @@ export function ExistingBudgetsModal({
                   key={b.id}
                   className={`p-4 rounded-2xl border transition-all hover:shadow-md ${
                     isLight
-                      ? 'bg-white border-zinc-200 hover:border-cyan-400'
+                      ? 'bg-white border-zinc-200 hover:border-emerald-400'
                       : 'bg-zinc-850 border-zinc-750 hover:border-emerald-600'
                   }`}
                 >
@@ -243,9 +243,9 @@ export function ExistingBudgetsModal({
                           onSelectBudget(b);
                           onClose();
                         }}
-                        className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black transition-all shadow-xs active:scale-98 ${
+                        className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black transition-all shadow-xs active:scale-98 cursor-pointer ${
                           isLight
-                            ? 'bg-cyan-700 hover:bg-cyan-800 text-white'
+                            ? 'bg-[#00FF7F] hover:bg-[#00e676] text-black shadow-emerald-500/20'
                             : 'bg-emerald-600 hover:bg-emerald-700 text-black'
                         }`}
                       >
