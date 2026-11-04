@@ -14,7 +14,7 @@ import {
   Save,
   MessageCircle,
 } from 'lucide-react';
-import { Client, Budget } from '@/lib/types';
+import { Client, Budget, ThemeMode } from '@/lib/types';
 import { formatPhone } from '@/lib/formatters';
 import { getStatusConfig, STATUS_OPTIONS } from '@/lib/statusConfig';
 import { DeleteConfirmModal } from './DeleteConfirmModal';

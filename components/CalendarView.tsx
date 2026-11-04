@@ -11,7 +11,7 @@ import {
   ArrowUpRight,
   Plus,
 } from 'lucide-react';
-import { Budget, FinancialTransaction, CalendarEvent, VehicleChecklist } from '@/lib/types';
+import { Budget, FinancialTransaction, CalendarEvent, VehicleChecklist, ThemeMode } from '@/lib/types';
 import { DayActionModal } from './DayActionModal';
 
 interface CalendarViewProps {
@@ -172,8 +172,13 @@ export function CalendarView({
                 Calendário da Oficina
               </h2>
             </div>
-            <p className="text-xs font-bold text-zinc-950 dark:text-zinc-400 mt-1">
-              Dia atual destacado em <span className="font-extrabold text-emerald-800 dark:text-emerald-400">verde claro</span>. Clique em qualquer data para abrir opções rápidas.
+            <p className="text-xs font-bold text-zinc-950 dark:text-zinc-400 mt-1 flex items-center gap-1.5 flex-wrap">
+              Dia atual destacado em{' '}
+              <span className="inline-flex items-center gap-1 font-extrabold text-emerald-800 dark:text-emerald-400">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#00FF7F] dark:bg-emerald-400 ring-1 ring-emerald-600/60 shrink-0 inline-block" />
+                verde primavera
+              </span>
+              . Clique em qualquer data para abrir opções rápidas.
             </p>
           </div>
 
@@ -343,17 +348,24 @@ export function CalendarView({
                     }
                   }}
                   className={`group relative min-h-[75px] md:min-h-[102px] p-2 rounded-xl md:rounded-2xl border transition-all cursor-pointer flex flex-col justify-between ${
-                    isLight
+                    isToday
+                      ? isLight
+                        ? 'bg-emerald-50/70 hover:bg-emerald-100/70 border-emerald-400 shadow-xs ring-1 ring-emerald-300/60'
+                        : 'bg-emerald-950/20 hover:bg-emerald-950/40 border-emerald-500/70 shadow-xs ring-1 ring-emerald-500/40'
+                      : isLight
                       ? 'bg-zinc-50 hover:bg-emerald-50/80 border-zinc-200 hover:border-emerald-400 hover:shadow-md'
                       : 'bg-zinc-800/40 hover:bg-zinc-800 border-zinc-700/60 hover:border-emerald-500 hover:shadow-lg'
                   }`}
                 >
-                  {/* Day Number with requested light green circle on current day */}
+                  {/* Day Number with requested spring green circle on current day */}
                   <div className="flex items-center justify-between w-full">
                     {isToday ? (
-                      /* CIRCLE NA COR VERDE CLARO NO DIA ATUAL */
-                      <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-emerald-300/60 dark:bg-emerald-400/30 ring-2 ring-emerald-600 dark:ring-emerald-400 flex items-center justify-center font-black text-xs md:text-sm text-black dark:text-emerald-200 shadow-sm">
-                        {day}
+                      /* CIRCLE NA COR VERDE PRIMAVERA NO DIA ATUAL - 100% REDONDINHA E ELEGANTE */
+                      <div
+                        title="Hoje (Dia Atual)"
+                        className="w-7 h-7 min-w-[28px] min-h-[28px] max-w-[28px] max-h-[28px] md:w-8 md:h-8 md:min-w-[32px] md:min-h-[32px] md:max-w-[32px] md:max-h-[32px] aspect-square rounded-full shrink-0 flex items-center justify-center font-black text-xs md:text-sm leading-none bg-[#00FF7F] dark:bg-emerald-400 text-black shadow-md shadow-emerald-500/35 ring-2 ring-white dark:ring-zinc-900 border border-emerald-600/30 select-none transition-transform group-hover:scale-105"
+                      >
+                        <span className="leading-none">{day}</span>
                       </div>
                     ) : (
                       <span className={`text-xs md:text-sm font-black px-1 ${

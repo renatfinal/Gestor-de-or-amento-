@@ -15,7 +15,7 @@ import {
   ShieldCheck,
   UserPlus,
 } from 'lucide-react';
-import { UserProfile } from '@/lib/types';
+import { UserProfile, ThemeMode } from '@/lib/types';
 import { formatPhone } from '@/lib/formatters';
 
 interface ProfileModalProps {

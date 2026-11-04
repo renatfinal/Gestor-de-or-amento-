@@ -19,7 +19,7 @@ import {
   Palette,
   ChevronDown,
 } from 'lucide-react';
-import { Budget, BudgetStatus, VehiclePhoto } from '@/lib/types';
+import { Budget, BudgetStatus, VehiclePhoto, ThemeMode } from '@/lib/types';
 import { STATUS_OPTIONS, getStatusConfig } from '@/lib/statusConfig';
 import {
   formatCurrencyInput,

@@ -12,7 +12,7 @@ import {
   ChevronRight,
   Layers,
 } from 'lucide-react';
-import { FinancialTransaction } from '@/lib/types';
+import { FinancialTransaction, ThemeMode } from '@/lib/types';
 import { formatBRL } from '@/lib/formatters';
 
 interface BalanceteViewProps {

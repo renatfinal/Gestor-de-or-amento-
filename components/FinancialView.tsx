@@ -22,7 +22,7 @@ import {
   Check,
   Wallet,
 } from 'lucide-react';
-import { FinancialTransaction, TransactionType } from '@/lib/types';
+import { FinancialTransaction, TransactionType, ThemeMode } from '@/lib/types';
 import { formatBRL, formatCurrencyInput, isoToBrDate } from '@/lib/formatters';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
 

@@ -15,7 +15,7 @@ import {
   FileCheck2,
   Filter,
 } from 'lucide-react';
-import { Budget, BudgetStatus } from '@/lib/types';
+import { Budget, BudgetStatus, ThemeMode } from '@/lib/types';
 import { getStatusConfig, STATUS_OPTIONS } from '@/lib/statusConfig';
 import { formatBRL } from '@/lib/formatters';
 
