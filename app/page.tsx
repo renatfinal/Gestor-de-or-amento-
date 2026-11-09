@@ -174,6 +174,18 @@ export default function HomePage() {
     fetchCloudData(targetEmail)
       .then((cloudData) => {
         if (cloudData) {
+          if (cloudData.user) {
+            const syncedProfile: UserProfile = {
+              name: cloudData.user.name || profile.name,
+              phone: cloudData.user.phone || profile.phone,
+              email: cloudData.user.email || profile.email,
+              password: cloudData.user.password || profile.password,
+              workshopName: cloudData.user.workshopName || profile.workshopName,
+              workshopAddress: cloudData.user.workshopAddress || profile.workshopAddress,
+            };
+            setProfile(syncedProfile);
+            saveStoredProfile(syncedProfile);
+          }
           if (cloudData.budgets && cloudData.budgets.length > 0) {
             setBudgets(cloudData.budgets);
             saveStoredBudgets(cloudData.budgets);
@@ -434,10 +446,23 @@ export default function HomePage() {
           theme={theme}
           onToggleTheme={handleToggleTheme}
           profile={profile}
-          onLoginSuccess={(newSession) => {
+          onLoginSuccess={(newSession, userData) => {
             setSession(newSession);
             saveStoredSession(newSession);
-            showToast(`Bem-vindo ao JL Automotive, ${profile.name || 'Usuário'}!`);
+            if (userData) {
+              const loadedProfile: UserProfile = {
+                name: userData.name || profile.name || 'JL Automotive',
+                phone: userData.phone || profile.phone || '(44) 99937-0049',
+                email: userData.email || newSession.email,
+                password: userData.password || profile.password || 'admin',
+                workshopName:
+                  userData.workshopName || profile.workshopName || 'JL Automotive & Pintura Automotiva',
+                workshopAddress: userData.workshopAddress || profile.workshopAddress || '',
+              };
+              setProfile(loadedProfile);
+              saveStoredProfile(loadedProfile);
+            }
+            showToast(`Bem-vindo ao JL Automotive, ${userData?.name || profile.name || 'Usuário'}!`);
           }}
           onOpenFirstAccess={() => setIsFirstAccessModalOpen(true)}
         />

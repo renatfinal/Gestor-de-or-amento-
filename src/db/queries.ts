@@ -1,6 +1,6 @@
 import { db } from './index.ts';
 import { users, clients, budgets, transactions, events, checklists } from './schema.ts';
-import { eq, and, desc, asc } from 'drizzle-orm';
+import { eq, and, desc, asc, sql, or } from 'drizzle-orm';
 
 // --- USUÁRIOS ---
 export async function getOrCreateUser(data: {
@@ -13,30 +13,39 @@ export async function getOrCreateUser(data: {
   password?: string;
 }) {
   try {
+    const cleanEmail = (data.email || '').trim().toLowerCase();
+    const existing = await getUserByEmail(cleanEmail);
+
+    if (existing) {
+      const updated = await db
+        .update(users)
+        .set({
+          email: cleanEmail,
+          ...(data.name ? { name: data.name.trim() } : {}),
+          ...(data.phone ? { phone: data.phone.trim() } : {}),
+          ...(data.workshopName ? { workshopName: data.workshopName.trim() } : {}),
+          ...(data.workshopAddress ? { workshopAddress: data.workshopAddress.trim() } : {}),
+          ...(data.password ? { password: data.password.trim() } : {}),
+          updatedAt: new Date(),
+        })
+        .where(eq(users.id, existing.id))
+        .returning();
+      return updated[0];
+    }
+
     const result = await db
       .insert(users)
       .values({
-        uid: data.uid,
-        email: data.email,
-        name: data.name || 'JL Automotive',
-        phone: data.phone || '(44) 99937-0049',
-        workshopName: data.workshopName || 'JL Automotive - Funilaria & Pintura',
-        workshopAddress:
+        uid: data.uid || cleanEmail,
+        email: cleanEmail,
+        name: (data.name || 'JL Automotive').trim(),
+        phone: (data.phone || '(44) 99937-0049').trim(),
+        workshopName: (data.workshopName || 'JL Automotive - Funilaria & Pintura').trim(),
+        workshopAddress: (
           data.workshopAddress ||
-          'Rua Guilherme Naimann 198, Jardim Bandeirantes - CEP: 87308-410 - Campo Mourão - PR',
-        password: data.password || '',
-      })
-      .onConflictDoUpdate({
-        target: users.uid,
-        set: {
-          email: data.email,
-          ...(data.name ? { name: data.name } : {}),
-          ...(data.phone ? { phone: data.phone } : {}),
-          ...(data.workshopName ? { workshopName: data.workshopName } : {}),
-          ...(data.workshopAddress ? { workshopAddress: data.workshopAddress } : {}),
-          ...(data.password ? { password: data.password } : {}),
-          updatedAt: new Date(),
-        },
+          'Rua Guilherme Naimann 198, Jardim Bandeirantes - CEP: 87308-410 - Campo Mourão - PR'
+        ).trim(),
+        password: (data.password || '').trim(),
       })
       .returning();
     return result[0];
@@ -48,11 +57,43 @@ export async function getOrCreateUser(data: {
 
 export async function getUserByEmail(email: string) {
   try {
-    const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    const cleanEmail = (email || '').trim().toLowerCase();
+    if (!cleanEmail) return null;
+
+    const result = await db
+      .select()
+      .from(users)
+      .where(
+        or(
+          sql`LOWER(${users.email}) = LOWER(${cleanEmail})`,
+          sql`LOWER(${users.uid}) = LOWER(${cleanEmail})`
+        )
+      )
+      .limit(1);
     return result[0] || null;
   } catch (error) {
     console.error('Error in getUserByEmail:', error);
     throw new Error('Falha ao buscar usuário por email.', { cause: error });
+  }
+}
+
+export async function updateUserPassword(emailOrUid: string, newPassword: string) {
+  try {
+    const clean = (emailOrUid || '').trim().toLowerCase();
+    const result = await db
+      .update(users)
+      .set({ password: newPassword.trim(), updatedAt: new Date() })
+      .where(
+        or(
+          sql`LOWER(${users.email}) = LOWER(${clean})`,
+          sql`LOWER(${users.uid}) = LOWER(${clean})`
+        )
+      )
+      .returning();
+    return result[0] || null;
+  } catch (error) {
+    console.error('Error in updateUserPassword:', error);
+    throw new Error('Falha ao atualizar senha.', { cause: error });
   }
 }
 

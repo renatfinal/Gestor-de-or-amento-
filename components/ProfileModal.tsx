@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { UserProfile, ThemeMode } from '@/lib/types';
 import { formatPhone } from '@/lib/formatters';
+import { authenticateWithDb } from '@/lib/cloudSync';
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -81,14 +82,28 @@ export function ProfileModal({
       return;
     }
 
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPassword = password.trim();
+
     const updated: UserProfile = {
       name: name.trim(),
       phone: phone.trim(),
-      email: email.trim(),
-      password: password,
+      email: cleanEmail,
+      password: cleanPassword,
       workshopName: workshopName.trim(),
       workshopAddress: workshopAddress.trim(),
     };
+
+    // Salva no banco de dados na nuvem imediatamente
+    authenticateWithDb({
+      action: isFirstAccess ? 'register' : 'update-profile',
+      email: cleanEmail,
+      password: cleanPassword,
+      name: name.trim(),
+      phone: phone.trim(),
+      workshopName: workshopName.trim(),
+      workshopAddress: workshopAddress.trim(),
+    }).catch((err) => console.warn('Profile direct DB sync notice:', err));
 
     onSaveProfile(updated);
     setSuccessMessage(

@@ -17,20 +17,37 @@ import {
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const userId = searchParams.get('userId') || searchParams.get('email') || 'default_user';
+    const rawUserId = searchParams.get('userId') || searchParams.get('email') || 'default_user';
+    const cleanUserId = rawUserId.trim().toLowerCase();
+
+    // Buscar perfil do usuário para sincronizar dados cadastrais em múltiplos dispositivos
+    const userRecord = await getUserByEmail(cleanUserId);
+    const queryId = userRecord?.uid || cleanUserId;
 
     const [clientsData, budgetsData, transactionsData, eventsData, checklistsData] =
       await Promise.all([
-        getClientsByUser(userId),
-        getBudgetsByUser(userId),
-        getTransactionsByUser(userId),
-        getEventsByUser(userId),
-        getChecklistsByUser(userId),
+        getClientsByUser(queryId),
+        getBudgetsByUser(queryId),
+        getTransactionsByUser(queryId),
+        getEventsByUser(queryId),
+        getChecklistsByUser(queryId),
       ]);
 
     return NextResponse.json({
       success: true,
       data: {
+        user: userRecord
+          ? {
+              id: userRecord.id,
+              uid: userRecord.uid,
+              name: userRecord.name,
+              email: userRecord.email,
+              phone: userRecord.phone,
+              workshopName: userRecord.workshopName,
+              workshopAddress: userRecord.workshopAddress,
+              password: userRecord.password,
+            }
+          : null,
         clients: clientsData,
         budgets: budgetsData,
         transactions: transactionsData,
@@ -52,13 +69,15 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { userId, clients, budgets, transactions, events, checklists, profile } = body;
 
-    const targetUserId = userId || (profile && profile.email) || 'default_user';
+    const rawTarget = userId || (profile && profile.email) || 'default_user';
+    const targetUserId = rawTarget.trim().toLowerCase();
 
     // 1. Sync User Profile se fornecido
     if (profile && profile.email) {
+      const cleanProfileEmail = profile.email.trim().toLowerCase();
       await getOrCreateUser({
         uid: targetUserId,
-        email: profile.email,
+        email: cleanProfileEmail,
         name: profile.name,
         phone: profile.phone,
         workshopName: profile.workshopName,

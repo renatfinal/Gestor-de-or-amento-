@@ -4,6 +4,7 @@ import { auth, googleAuthProvider } from '@/src/lib/firebase';
 import { signInWithPopup } from 'firebase/auth';
 
 export interface FullAppData {
+  user?: any;
   profile?: UserProfile;
   budgets?: Budget[];
   clients?: Client[];
@@ -58,7 +59,14 @@ export async function fetchCloudData(userId: string): Promise<FullAppData | null
 
 // Login ou Registro de Usuário no Banco de Dados
 export async function authenticateWithDb(payload: {
-  action: 'login' | 'register' | 'update-profile';
+  action:
+    | 'login'
+    | 'register'
+    | 'update-profile'
+    | 'forgot-password'
+    | 'recover-password'
+    | 'reset-password'
+    | 'first-access';
   email: string;
   password?: string;
   name?: string;
@@ -66,7 +74,7 @@ export async function authenticateWithDb(payload: {
   workshopName?: string;
   workshopAddress?: string;
   uid?: string;
-}): Promise<{ success: boolean; user?: any; error?: string }> {
+}): Promise<{ success: boolean; user?: any; error?: string; message?: string }> {
   try {
     const res = await fetch('/api/auth', {
       method: 'POST',

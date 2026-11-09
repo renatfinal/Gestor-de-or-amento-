@@ -27,7 +27,7 @@ interface LoginPageProps {
   theme: ThemeMode;
   onToggleTheme: () => void;
   profile: UserProfile;
-  onLoginSuccess: (session: AuthSession) => void;
+  onLoginSuccess: (session: AuthSession, userData?: any) => void;
   onOpenFirstAccess: () => void;
 }
 
@@ -52,6 +52,12 @@ export function LoginPage({
   const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotSuccess, setForgotSuccess] = useState(false);
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotError, setForgotError] = useState<string | null>(null);
+  const [recoveredUser, setRecoveredUser] = useState<any | null>(null);
+  const [newPasswordToSet, setNewPasswordToSet] = useState('');
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [resetSuccessMessage, setResetSuccessMessage] = useState<string | null>(null);
 
   // Handle Login submission with Cloud SQL database
   const handleLoginSubmit = async (e: React.FormEvent) => {
@@ -81,11 +87,38 @@ export function LoginPage({
           name: res.user.name || profile.name || 'JL Automotive',
           loggedInAt: new Date().toISOString(),
         };
-        onLoginSuccess(session);
+        onLoginSuccess(session, res.user);
         setIsLoginModalOpen(false);
+        setIsLoggingIn(false);
         return;
       }
-    } catch (dbErr) {
+
+      if (res.error) {
+        // Fallback local master check only if matching exactly
+        const profileEmail = (profile.email || 'jl.automotive@gmail.com').toLowerCase();
+        const profilePass = profile.password || 'admin';
+
+        const isMasterMatch =
+          cleanEmail === 'jl.automotive@gmail.com' && (cleanPass === 'admin' || cleanPass === profilePass);
+        const isProfileMatch = cleanEmail === profileEmail && cleanPass === profilePass;
+
+        if (isMasterMatch || isProfileMatch) {
+          const session: AuthSession = {
+            email: cleanEmail,
+            name: profile.name || 'JL Automotive',
+            loggedInAt: new Date().toISOString(),
+          };
+          onLoginSuccess(session);
+          setIsLoginModalOpen(false);
+          setIsLoggingIn(false);
+          return;
+        }
+
+        setLoginError(res.error);
+        setIsLoggingIn(false);
+        return;
+      }
+    } catch (dbErr: any) {
       console.warn('DB login attempt fallback to local verification:', dbErr);
     }
 
@@ -107,8 +140,8 @@ export function LoginPage({
       setIsLoginModalOpen(false);
     } else {
       setLoginError('E-mail ou senha incorretos. Verifique suas credenciais ou use "Esqueci minha Senha".');
-      setIsLoggingIn(false);
     }
+    setIsLoggingIn(false);
   };
 
   const handleGoogleLogin = async () => {
@@ -131,15 +164,79 @@ export function LoginPage({
 
   // Quick fill helper for easy testing
   const handleQuickFillDemo = () => {
-    setEmail(profile.email || 'jl.automotive@gmail.com');
-    setPassword(profile.password || 'admin');
+    setEmail(profile.email || 'renatof.rcc@gmail.com');
+    setPassword(profile.password || 'rema9006');
     setLoginError(null);
   };
 
-  // Handle Forgot Password submit
-  const handleForgotSubmit = (e: React.FormEvent) => {
+  // Handle Forgot Password submit - Queries Cloud SQL directly
+  const handleForgotSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setForgotSuccess(true);
+    setForgotError(null);
+    setResetSuccessMessage(null);
+    const clean = forgotEmail.trim().toLowerCase();
+    if (!clean) {
+      setForgotError('Por favor, informe seu e-mail cadastrado.');
+      return;
+    }
+
+    setForgotLoading(true);
+    try {
+      const res = await authenticateWithDb({
+        action: 'forgot-password',
+        email: clean,
+      });
+
+      if (res.success && res.user) {
+        setRecoveredUser(res.user);
+        setForgotSuccess(true);
+      } else {
+        if (clean === (profile.email || '').toLowerCase() || clean === 'jl.automotive@gmail.com') {
+          setRecoveredUser({
+            name: profile.name || 'JL Automotive',
+            email: clean,
+            password: profile.password || 'admin',
+          });
+          setForgotSuccess(true);
+        } else {
+          setForgotError(res.error || 'Nenhuma conta encontrada com este e-mail no banco de dados.');
+        }
+      }
+    } catch (err: any) {
+      setForgotError(err?.message || 'Erro de conexão com o banco de dados.');
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  // Handle Redefining Password directly in Database
+  const handleResetPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPasswordToSet.trim() || !recoveredUser?.email) return;
+
+    setIsResettingPassword(true);
+    setForgotError(null);
+    try {
+      const res = await authenticateWithDb({
+        action: 'reset-password',
+        email: recoveredUser.email,
+        password: newPasswordToSet.trim(),
+      });
+      if (res.success) {
+        setRecoveredUser({
+          ...recoveredUser,
+          password: newPasswordToSet.trim(),
+        });
+        setResetSuccessMessage('Senha atualizada com sucesso no banco de dados!');
+        setNewPasswordToSet('');
+      } else {
+        setForgotError(res.error || 'Não foi possível redefinir a senha.');
+      }
+    } catch (err: any) {
+      setForgotError(err?.message || 'Erro ao redefinir senha.');
+    } finally {
+      setIsResettingPassword(false);
+    }
   };
 
   // Helper to ensure input scrolls smoothly into view on mobile keyboard
@@ -456,7 +553,7 @@ export function LoginPage({
                 </div>
               </div>
 
-              {/* Dica rápida para preenchimento fácil / demonstração */}
+              {/* Dica rápida para preenchimento fácil */}
               <div
                 className={`p-2.5 rounded-xl text-[11px] flex items-center justify-between gap-2 border ${
                   isLight
@@ -464,7 +561,7 @@ export function LoginPage({
                     : 'bg-zinc-800/50 border-zinc-700/60 text-zinc-400'
                 }`}
               >
-                <span>Dica: Conta de acesso rápido</span>
+                <span>Conta cadastrada no sistema</span>
                 <button
                   type="button"
                   onClick={handleQuickFillDemo}
@@ -472,7 +569,7 @@ export function LoginPage({
                     isLight ? 'text-emerald-800' : 'text-[#00FF7F]'
                   }`}
                 >
-                  Preencher dados
+                  Preencher dados salvos
                 </button>
               </div>
 
@@ -571,7 +668,13 @@ export function LoginPage({
             }`}
           >
             <button
-              onClick={() => setIsForgotModalOpen(false)}
+              onClick={() => {
+                setIsForgotModalOpen(false);
+                setForgotSuccess(false);
+                setForgotError(null);
+                setRecoveredUser(null);
+                setResetSuccessMessage(null);
+              }}
               type="button"
               className="absolute top-4 right-4 p-1.5 rounded-full text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800"
             >
@@ -586,54 +689,122 @@ export function LoginPage({
               >
                 <KeyRound className="w-5 h-5" />
               </div>
-              <h3 className="text-base font-black">Recuperar Senha</h3>
+              <div>
+                <h3 className="text-base font-black">Recuperar Credenciais</h3>
+                <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                  Consulte ou redefina sua senha cadastrada
+                </p>
+              </div>
             </div>
 
-            {forgotSuccess ? (
+            {forgotError && (
+              <div className="p-3 mb-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-xs flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{forgotError}</span>
+              </div>
+            )}
+
+            {resetSuccessMessage && (
+              <div className="p-3 mb-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs flex items-start gap-2">
+                <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{resetSuccessMessage}</span>
+              </div>
+            )}
+
+            {forgotSuccess && recoveredUser ? (
               <div className="space-y-3">
-                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs flex items-start gap-2">
+                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs flex items-start gap-2">
                   <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-bold">Instruções enviadas!</p>
-                    <p className="mt-0.5">
-                      Verifique sua caixa de entrada no e-mail: <strong>{forgotEmail || profile.email}</strong>.
+                    <p className="font-bold">Conta Localizada no Banco de Dados!</p>
+                    <p className="mt-0.5 text-[11px] text-zinc-600 dark:text-zinc-300">
+                      Você pode entrar imediatamente com esta conta ou redefinir a senha.
                     </p>
                   </div>
                 </div>
 
                 <div
-                  className={`p-3 rounded-xl text-xs space-y-1 ${
-                    isLight ? 'bg-zinc-100 text-zinc-800' : 'bg-zinc-800/80 text-zinc-300'
+                  className={`p-3.5 rounded-2xl text-xs space-y-1.5 border ${
+                    isLight ? 'bg-zinc-50 border-zinc-200 text-zinc-800' : 'bg-zinc-800/80 border-zinc-700 text-zinc-200'
                   }`}
                 >
-                  <p className="font-bold text-[11px] text-zinc-400 uppercase">Credencial cadastrada neste dispositivo:</p>
-                  <p>E-mail: <strong>{profile.email || 'jl.automotive@gmail.com'}</strong></p>
-                  <p>Senha configurada: <strong className="font-mono text-emerald-500">{profile.password || 'admin'}</strong></p>
+                  <div className="flex justify-between items-center text-[11px] border-b pb-1 border-zinc-200 dark:border-zinc-700">
+                    <span className="text-zinc-500 font-medium">Nome:</span>
+                    <span className="font-bold text-zinc-900 dark:text-white">{recoveredUser.name || 'JL Automotive'}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-[11px] border-b pb-1 border-zinc-200 dark:border-zinc-700">
+                    <span className="text-zinc-500 font-medium">E-mail:</span>
+                    <span className="font-bold font-mono text-zinc-900 dark:text-white">{recoveredUser.email}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-[11px] pt-0.5">
+                    <span className="text-zinc-500 font-medium">Sua Senha Atual:</span>
+                    <span className="font-black font-mono text-sm px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                      {recoveredUser.password || 'admin'}
+                    </span>
+                  </div>
                 </div>
 
                 <button
                   type="button"
                   onClick={() => {
-                    setEmail(profile.email || 'jl.automotive@gmail.com');
-                    setPassword(profile.password || 'admin');
+                    setEmail(recoveredUser.email);
+                    setPassword(recoveredUser.password || '');
                     setIsForgotModalOpen(false);
+                    // Automatic login with retrieved credentials
+                    const session: AuthSession = {
+                      email: recoveredUser.email,
+                      name: recoveredUser.name || 'JL Automotive',
+                      loggedInAt: new Date().toISOString(),
+                    };
+                    onLoginSuccess(session, recoveredUser);
+                    setIsLoginModalOpen(false);
                   }}
-                  className="w-full py-2.5 rounded-xl text-xs font-bold bg-[#00FF7F] text-black shadow-md cursor-pointer"
+                  className="w-full py-2.5 rounded-xl text-xs font-black bg-[#00FF7F] text-black shadow-md hover:bg-[#00e672] transition-all cursor-pointer flex items-center justify-center gap-1.5"
                 >
-                  Usar esta senha para Entrar
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>Entrar agora com esta conta</span>
                 </button>
+
+                {/* Opção para Redefinir Senha */}
+                <div className="pt-2 border-t border-zinc-200 dark:border-zinc-800">
+                  <form onSubmit={handleResetPasswordSubmit} className="space-y-2">
+                    <label className="block text-[11px] font-bold text-zinc-600 dark:text-zinc-400">
+                      Deseja criar uma nova senha para esta conta?
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={newPasswordToSet}
+                        onChange={(e) => setNewPasswordToSet(e.target.value)}
+                        placeholder="Digite nova senha"
+                        className={`flex-1 px-3 py-2 rounded-xl text-xs border focus:outline-hidden ${
+                          isLight
+                            ? 'bg-zinc-50 border-zinc-300 text-zinc-900'
+                            : 'bg-zinc-800 border-zinc-700 text-white'
+                        }`}
+                      />
+                      <button
+                        type="submit"
+                        disabled={isResettingPassword || !newPasswordToSet.trim()}
+                        className="px-3 py-2 rounded-xl text-xs font-bold bg-zinc-800 text-white dark:bg-zinc-700 hover:bg-zinc-900 disabled:opacity-50 cursor-pointer"
+                      >
+                        {isResettingPassword ? 'Salvando...' : 'Atualizar'}
+                      </button>
+                    </div>
+                  </form>
+                </div>
               </div>
             ) : (
               <form onSubmit={handleForgotSubmit} className="space-y-3">
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                  Digite seu e-mail cadastrado para receber instruções de acesso:
+                <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                  Digite seu e-mail para localizar sua conta e senha no banco de dados da oficina:
                 </p>
                 <input
                   type="email"
                   required
                   value={forgotEmail}
                   onChange={(e) => setForgotEmail(e.target.value)}
-                  placeholder="seu.email@empresa.com"
+                  placeholder="ex: renatof.rcc@gmail.com"
                   className={`w-full px-3.5 py-2.5 rounded-xl text-xs border focus:outline-hidden ${
                     isLight
                       ? 'bg-zinc-50 border-zinc-300 text-zinc-900'
@@ -642,9 +813,14 @@ export function LoginPage({
                 />
                 <button
                   type="submit"
-                  className="w-full py-2.5 rounded-xl text-xs font-bold bg-[#00FF7F] text-black shadow-md cursor-pointer"
+                  disabled={forgotLoading}
+                  className="w-full py-2.5 rounded-xl text-xs font-black bg-[#00FF7F] text-black shadow-md hover:bg-[#00e672] transition-all cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-60"
                 >
-                  Enviar Instruções
+                  {forgotLoading ? (
+                    <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <span>Consultar Senha no Banco de Dados</span>
+                  )}
                 </button>
               </form>
             )}
