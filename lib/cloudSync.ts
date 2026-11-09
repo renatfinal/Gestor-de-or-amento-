@@ -16,7 +16,12 @@ export interface FullAppData {
 // Sincroniza todos os dados do usuário para o banco de dados Cloud SQL (PostgreSQL)
 export async function syncDataToCloud(
   userId: string,
-  data: FullAppData
+  data: FullAppData & {
+    deletedItem?: {
+      type: 'transaction' | 'budget' | 'client' | 'event' | 'checklist';
+      id: string;
+    };
+  }
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const res = await fetch('/api/sync', {
@@ -33,7 +38,6 @@ export async function syncDataToCloud(
       return { success: false, error: errJson.error || 'Falha ao sincronizar' };
     }
 
-    const resJson = await res.json();
     return { success: true };
   } catch (err: any) {
     console.error('Erro de sincronização com o banco de dados:', err);
@@ -41,10 +45,18 @@ export async function syncDataToCloud(
   }
 }
 
-// Baixa os dados salvos no banco de dados para a conta do usuário
+// Baixa os dados salvos no banco de dados para a conta do usuário (sem cache)
 export async function fetchCloudData(userId: string): Promise<FullAppData | null> {
   try {
-    const res = await fetch(`/api/sync?userId=${encodeURIComponent(userId)}`);
+    const res = await fetch(
+      `/api/sync?userId=${encodeURIComponent(userId)}&_t=${Date.now()}`,
+      {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+        },
+      }
+    );
     if (!res.ok) return null;
     const json = await res.json();
     if (json.success && json.data) {
@@ -55,6 +67,78 @@ export async function fetchCloudData(userId: string): Promise<FullAppData | null
     console.error('Erro ao buscar dados na nuvem:', err);
     return null;
   }
+}
+
+// Verifica versão de sincronização em tempo real (consulta leve)
+export async function checkSyncVersion(userId: string): Promise<number> {
+  try {
+    const res = await fetch(
+      `/api/sync/version?userId=${encodeURIComponent(userId)}&_t=${Date.now()}`,
+      {
+        cache: 'no-store',
+      }
+    );
+    if (!res.ok) return 0;
+    const json = await res.json();
+    return json.version || 0;
+  } catch (e) {
+    return 0;
+  }
+}
+
+// Escuta alterações em tempo real via Server-Sent Events (SSE)
+export function subscribeToLiveSync(
+  userId: string,
+  onSyncEvent: () => void
+): () => void {
+  const cleanId = (userId || '').trim().toLowerCase();
+  let eventSource: EventSource | null = null;
+  let isClosed = false;
+
+  const connect = () => {
+    if (isClosed || typeof window === 'undefined') return;
+    try {
+      eventSource = new EventSource(
+        `/api/sync/live?userId=${encodeURIComponent(cleanId)}`
+      );
+
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data && data.type === 'sync') {
+            onSyncEvent();
+          }
+        } catch (e) {
+          // Ignora erro de parsing
+        }
+      };
+
+      eventSource.onerror = () => {
+        if (eventSource) {
+          eventSource.close();
+          eventSource = null;
+        }
+        // Reconecta automaticamente em 3s se conexão cair
+        if (!isClosed) {
+          setTimeout(connect, 3000);
+        }
+      };
+    } catch (err) {
+      if (!isClosed) {
+        setTimeout(connect, 3000);
+      }
+    }
+  };
+
+  connect();
+
+  return () => {
+    isClosed = true;
+    if (eventSource) {
+      eventSource.close();
+      eventSource = null;
+    }
+  };
 }
 
 // Login ou Registro de Usuário no Banco de Dados

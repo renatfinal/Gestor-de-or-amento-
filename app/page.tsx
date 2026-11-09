@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   FilePlus,
   ArrowDownLeft,
@@ -40,7 +40,12 @@ import {
   saveStoredChecklists,
 } from '@/lib/storage';
 import { getBudgetsFromIndexedDb } from '@/lib/imageStorage';
-import { syncDataToCloud, fetchCloudData } from '@/lib/cloudSync';
+import {
+  syncDataToCloud,
+  fetchCloudData,
+  subscribeToLiveSync,
+  checkSyncVersion,
+} from '@/lib/cloudSync';
 import { Header } from '@/components/Header';
 import { BottomNav } from '@/components/BottomNav';
 import { CalendarView } from '@/components/CalendarView';
@@ -99,8 +104,12 @@ export default function HomePage() {
     events?: CalendarEvent[];
     checklists?: VehicleChecklist[];
     profile?: UserProfile;
+    deletedItem?: {
+      type: 'transaction' | 'budget' | 'client' | 'event' | 'checklist';
+      id: string;
+    };
   }) => {
-    const userEmail = session?.email || profile.email || 'jl.automotive@gmail.com';
+    const userEmail = (session?.email || profile.email || 'jl.automotive@gmail.com').trim().toLowerCase();
     setIsSyncing(true);
     try {
       await syncDataToCloud(userEmail, {
@@ -110,6 +119,7 @@ export default function HomePage() {
         events: overrides?.events ?? events,
         checklists: overrides?.checklists ?? checklists,
         profile: overrides?.profile ?? profile,
+        deletedItem: overrides?.deletedItem,
       });
       setLastSyncTime(new Date());
     } catch (e) {
@@ -168,55 +178,104 @@ export default function HomePage() {
       .catch(() => {});
   }, []);
 
-  // Hydrate data from Cloud SQL database automatically when session is present
-  useEffect(() => {
-    const targetEmail = session?.email || profile.email || 'jl.automotive@gmail.com';
-    fetchCloudData(targetEmail)
-      .then((cloudData) => {
-        if (cloudData) {
-          if (cloudData.user) {
-            const syncedProfile: UserProfile = {
-              name: cloudData.user.name || profile.name,
-              phone: cloudData.user.phone || profile.phone,
-              email: cloudData.user.email || profile.email,
-              password: cloudData.user.password || profile.password,
-              workshopName: cloudData.user.workshopName || profile.workshopName,
-              workshopAddress: cloudData.user.workshopAddress || profile.workshopAddress,
-            };
-            setProfile(syncedProfile);
-            saveStoredProfile(syncedProfile);
-          }
-          if (cloudData.budgets && cloudData.budgets.length > 0) {
-            setBudgets(cloudData.budgets);
-            saveStoredBudgets(cloudData.budgets);
-          }
-          if (cloudData.clients && cloudData.clients.length > 0) {
-            setClients(cloudData.clients);
-            saveStoredClients(cloudData.clients);
-          }
-          if (cloudData.transactions && cloudData.transactions.length > 0) {
-            setTransactions(cloudData.transactions);
-            saveStoredTransactions(cloudData.transactions);
-          }
-          if (cloudData.events && cloudData.events.length > 0) {
-            setEvents(cloudData.events);
-            saveStoredEvents(cloudData.events);
-          }
-          if (cloudData.checklists && cloudData.checklists.length > 0) {
-            setChecklists(cloudData.checklists);
-            saveStoredChecklists(cloudData.checklists);
-          }
-          setLastSyncTime(new Date());
-        } else {
-          // Push initial data to Cloud SQL database
-          triggerCloudSync();
+  // Função central para buscar e atualizar todos os dados da nuvem em tempo real
+  const refreshDataFromCloud = useCallback(async (notify: boolean = false) => {
+    const targetEmail = (session?.email || profile.email || 'jl.automotive@gmail.com')
+      .trim()
+      .toLowerCase();
+
+    try {
+      const cloudData = await fetchCloudData(targetEmail);
+      if (cloudData) {
+        if (cloudData.user) {
+          const syncedProfile: UserProfile = {
+            name: cloudData.user.name || profile.name,
+            phone: cloudData.user.phone || profile.phone,
+            email: cloudData.user.email || profile.email,
+            password: cloudData.user.password || profile.password,
+            workshopName: cloudData.user.workshopName || profile.workshopName,
+            workshopAddress: cloudData.user.workshopAddress || profile.workshopAddress,
+          };
+          setProfile(syncedProfile);
+          saveStoredProfile(syncedProfile);
         }
-      })
-      .catch((err) => {
-        console.warn('Initial cloud fetch notice:', err);
-      });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session?.email, profile.email]);
+        if (Array.isArray(cloudData.budgets)) {
+          setBudgets(cloudData.budgets);
+          saveStoredBudgets(cloudData.budgets);
+        }
+        if (Array.isArray(cloudData.clients)) {
+          setClients(cloudData.clients);
+          saveStoredClients(cloudData.clients);
+        }
+        if (Array.isArray(cloudData.transactions)) {
+          setTransactions(cloudData.transactions);
+          saveStoredTransactions(cloudData.transactions);
+        }
+        if (Array.isArray(cloudData.events)) {
+          setEvents(cloudData.events);
+          saveStoredEvents(cloudData.events);
+        }
+        if (Array.isArray(cloudData.checklists)) {
+          setChecklists(cloudData.checklists);
+          saveStoredChecklists(cloudData.checklists);
+        }
+        setLastSyncTime(new Date());
+        if (notify) {
+          showToast('Dados sincronizados com o servidor em tempo real!');
+        }
+      }
+    } catch (err) {
+      console.warn('Real-time cloud refresh notice:', err);
+    }
+  }, [session?.email, profile.email, profile.name, profile.phone, profile.password, profile.workshopName, profile.workshopAddress]);
+
+  // Sincronização em tempo real entre dispositivos: SSE Live Stream + Polling de segurança + Eventos de foco
+  useEffect(() => {
+    const targetEmail = (session?.email || profile.email || 'jl.automotive@gmail.com')
+      .trim()
+      .toLowerCase();
+
+    // 1. Carga inicial dos dados da conta (agendada de forma assíncrona)
+    const initTimer = setTimeout(() => {
+      refreshDataFromCloud();
+    }, 0);
+
+    // 2. Ouvinte em tempo real via Server-Sent Events (SSE)
+    // Qualquer alteração feita em um celular notifica imediatamente o outro!
+    const unsubscribe = subscribeToLiveSync(targetEmail, () => {
+      refreshDataFromCloud();
+    });
+
+    // 3. Polling de versão a cada 2.5 segundos (à prova de falhas para telas de celular em espera)
+    let lastKnownVersion = 0;
+    const intervalId = setInterval(async () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        const ver = await checkSyncVersion(targetEmail);
+        if (ver > 0 && ver !== lastKnownVersion) {
+          lastKnownVersion = ver;
+          refreshDataFromCloud();
+        }
+      }
+    }, 2500);
+
+    // 4. Sincronização imediata ao destravar a tela ou voltar para o navegador
+    const handleActiveFocus = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        refreshDataFromCloud();
+      }
+    };
+
+    window.addEventListener('focus', handleActiveFocus);
+    document.addEventListener('visibilitychange', handleActiveFocus);
+
+    return () => {
+      clearTimeout(initTimer);
+      unsubscribe();
+      clearInterval(intervalId);
+      window.removeEventListener('focus', handleActiveFocus);
+      document.removeEventListener('visibilitychange', handleActiveFocus);
+    };
+  }, [session?.email, profile.email, refreshDataFromCloud]);
 
   const handleToggleTheme = () => {
     const newTheme: ThemeMode = theme === 'dark-spring' ? 'light-spring' : 'dark-spring';
@@ -305,7 +364,10 @@ export default function HomePage() {
     const updated = clients.filter((c) => c.id !== clientId);
     setClients(updated);
     saveStoredClients(updated);
-    triggerCloudSync({ clients: updated });
+    triggerCloudSync({
+      clients: updated,
+      deletedItem: { type: 'client', id: clientId },
+    });
     showToast('Cliente removido da lista.');
   };
 
@@ -328,7 +390,10 @@ export default function HomePage() {
     const updated = transactions.filter((t) => t.id !== id);
     setTransactions(updated);
     saveStoredTransactions(updated);
-    triggerCloudSync({ transactions: updated });
+    triggerCloudSync({
+      transactions: updated,
+      deletedItem: { type: 'transaction', id },
+    });
     showToast('Lançamento excluído com sucesso.');
   };
 
@@ -359,7 +424,10 @@ export default function HomePage() {
     const updated = events.filter((e) => e.id !== id);
     setEvents(updated);
     saveStoredEvents(updated);
-    triggerCloudSync({ events: updated });
+    triggerCloudSync({
+      events: updated,
+      deletedItem: { type: 'event', id },
+    });
     showToast('Nota/Evento removido.');
   };
 
@@ -382,7 +450,10 @@ export default function HomePage() {
     const updated = checklists.filter((c) => c.id !== id);
     setChecklists(updated);
     saveStoredChecklists(updated);
-    triggerCloudSync({ checklists: updated });
+    triggerCloudSync({
+      checklists: updated,
+      deletedItem: { type: 'checklist', id },
+    });
     showToast('Check-list removido.');
   };
 
@@ -526,6 +597,8 @@ export default function HomePage() {
         onLogout={handleLogout}
         profile={profile}
         totalBudgets={budgets.length}
+        isSyncing={isSyncing}
+        onManualSync={() => refreshDataFromCloud(true)}
       />
 
       {/* Main App Container */}

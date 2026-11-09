@@ -2,17 +2,25 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   getClientsByUser,
   upsertClient,
+  deleteClient,
   getBudgetsByUser,
   upsertBudget,
+  deleteBudget,
   getTransactionsByUser,
   upsertTransaction,
+  deleteTransaction,
   getEventsByUser,
   upsertEvent,
+  deleteEvent,
   getChecklistsByUser,
   upsertChecklist,
+  deleteChecklist,
   getUserByEmail,
   getOrCreateUser,
 } from '@/src/db/queries';
+import { notifySync } from '@/lib/syncNotifier';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
@@ -33,28 +41,35 @@ export async function GET(req: NextRequest) {
         getChecklistsByUser(queryId),
       ]);
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        user: userRecord
-          ? {
-              id: userRecord.id,
-              uid: userRecord.uid,
-              name: userRecord.name,
-              email: userRecord.email,
-              phone: userRecord.phone,
-              workshopName: userRecord.workshopName,
-              workshopAddress: userRecord.workshopAddress,
-              password: userRecord.password,
-            }
-          : null,
-        clients: clientsData,
-        budgets: budgetsData,
-        transactions: transactionsData,
-        events: eventsData,
-        checklists: checklistsData,
+    return NextResponse.json(
+      {
+        success: true,
+        data: {
+          user: userRecord
+            ? {
+                id: userRecord.id,
+                uid: userRecord.uid,
+                name: userRecord.name,
+                email: userRecord.email,
+                phone: userRecord.phone,
+                workshopName: userRecord.workshopName,
+                workshopAddress: userRecord.workshopAddress,
+                password: userRecord.password,
+              }
+            : null,
+          clients: clientsData,
+          budgets: budgetsData,
+          transactions: transactionsData,
+          events: eventsData,
+          checklists: checklistsData,
+        },
       },
-    });
+      {
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+        },
+      }
+    );
   } catch (error: any) {
     console.error('Error in GET /api/sync:', error);
     return NextResponse.json(
@@ -67,10 +82,34 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { userId, clients, budgets, transactions, events, checklists, profile } = body;
+    const {
+      userId,
+      clients,
+      budgets,
+      transactions,
+      events,
+      checklists,
+      profile,
+      deletedItem,
+    } = body;
 
     const rawTarget = userId || (profile && profile.email) || 'default_user';
     const targetUserId = rawTarget.trim().toLowerCase();
+
+    // 0. Processamento de Exclusão no Banco de Dados
+    if (deletedItem && deletedItem.id && deletedItem.type) {
+      if (deletedItem.type === 'transaction') {
+        await deleteTransaction(deletedItem.id, targetUserId);
+      } else if (deletedItem.type === 'budget') {
+        await deleteBudget(deletedItem.id, targetUserId);
+      } else if (deletedItem.type === 'client') {
+        await deleteClient(deletedItem.id, targetUserId);
+      } else if (deletedItem.type === 'event') {
+        await deleteEvent(deletedItem.id, targetUserId);
+      } else if (deletedItem.type === 'checklist') {
+        await deleteChecklist(deletedItem.id, targetUserId);
+      }
+    }
 
     // 1. Sync User Profile se fornecido
     if (profile && profile.email) {
@@ -188,7 +227,14 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({ success: true, message: 'Dados sincronizados com sucesso no banco de dados!' });
+    // Notifica em tempo real todos os dispositivos que estão com a conta aberta
+    notifySync(targetUserId);
+
+    return NextResponse.json({
+      success: true,
+      version: Date.now(),
+      message: 'Dados sincronizados com sucesso no banco de dados!',
+    });
   } catch (error: any) {
     console.error('Error in POST /api/sync:', error);
     return NextResponse.json(

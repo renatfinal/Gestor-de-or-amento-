@@ -8,6 +8,7 @@ import {
   Car,
   LogOut,
   Database,
+  RefreshCw,
 } from 'lucide-react';
 import { ThemeMode, UserProfile } from '@/lib/types';
 
@@ -19,6 +20,8 @@ interface HeaderProps {
   onLogout?: () => void;
   profile: UserProfile;
   totalBudgets: number;
+  isSyncing?: boolean;
+  onManualSync?: () => void;
 }
 
 export function Header({
@@ -29,6 +32,8 @@ export function Header({
   onLogout,
   profile,
   totalBudgets,
+  isSyncing = false,
+  onManualSync,
 }: HeaderProps) {
   const isLight = theme !== 'dark-spring';
 
@@ -106,6 +111,28 @@ export function Header({
               </>
             )}
           </button>
+
+          {/* Live Sync Status & Manual Refresh Button */}
+          {onManualSync && (
+            <button
+              type="button"
+              onClick={onManualSync}
+              className={`flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-xl text-xs font-black border transition-all cursor-pointer shadow-xs ${
+                isSyncing
+                  ? 'bg-emerald-500/20 border-emerald-500 text-emerald-500 animate-pulse'
+                  : isLight
+                  ? 'bg-emerald-50 border-emerald-300 text-emerald-900 hover:bg-emerald-100'
+                  : 'bg-zinc-900 border-zinc-700 text-emerald-400 hover:border-emerald-500/50'
+              }`}
+              title={isSyncing ? 'Sincronizando em tempo real com a nuvem...' : 'Sincronizado em tempo real. Toque para atualizar agora.'}
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin text-emerald-500' : 'text-emerald-600 dark:text-emerald-400'}`} />
+              <span className="hidden xs:inline text-[11px] font-black">
+                {isSyncing ? 'Sincronizando...' : 'Ao Vivo'}
+              </span>
+              <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 shadow-xs shadow-emerald-400 animate-ping" />
+            </button>
+          )}
 
           {/* Database & Tables button */}
           {onOpenDatabaseTables && (
