@@ -17,6 +17,8 @@ import {
   deleteChecklist,
   getUserByEmail,
   getOrCreateUser,
+  getCanonicalWorkspaceUserId,
+  touchWorkspaceSync,
 } from '@/src/db/queries';
 import { notifySync } from '@/lib/syncNotifier';
 
@@ -25,12 +27,12 @@ export const dynamic = 'force-dynamic';
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const rawUserId = searchParams.get('userId') || searchParams.get('email') || 'default_user';
-    const cleanUserId = rawUserId.trim().toLowerCase();
+    const rawUserId = searchParams.get('userId') || searchParams.get('email') || 'renatof.rcc@gmail.com';
+    const cleanUserId = getCanonicalWorkspaceUserId(rawUserId);
 
     // Buscar perfil do usuário para sincronizar dados cadastrais em múltiplos dispositivos
     const userRecord = await getUserByEmail(cleanUserId);
-    const queryId = userRecord?.uid || cleanUserId;
+    const queryId = cleanUserId;
 
     const [clientsData, budgetsData, transactionsData, eventsData, checklistsData] =
       await Promise.all([
@@ -93,8 +95,8 @@ export async function POST(req: NextRequest) {
       deletedItem,
     } = body;
 
-    const rawTarget = userId || (profile && profile.email) || 'default_user';
-    const targetUserId = rawTarget.trim().toLowerCase();
+    const rawTarget = userId || (profile && profile.email) || 'renatof.rcc@gmail.com';
+    const targetUserId = getCanonicalWorkspaceUserId(rawTarget);
 
     // 0. Processamento de Exclusão no Banco de Dados
     if (deletedItem && deletedItem.id && deletedItem.type) {
@@ -227,8 +229,13 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Persiste atualização no PostgreSQL para sincronização entre múltiplas instâncias
+    await touchWorkspaceSync(targetUserId);
+
     // Notifica em tempo real todos os dispositivos que estão com a conta aberta
     notifySync(targetUserId);
+    notifySync('renatof.rcc@gmail.com');
+    notifySync('jl.automotive@gmail.com');
 
     return NextResponse.json({
       success: true,

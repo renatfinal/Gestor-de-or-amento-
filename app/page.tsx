@@ -109,7 +109,7 @@ export default function HomePage() {
       id: string;
     };
   }) => {
-    const userEmail = (session?.email || profile.email || 'jl.automotive@gmail.com').trim().toLowerCase();
+    const userEmail = (session?.email || profile.email || 'renatof.rcc@gmail.com').trim().toLowerCase();
     setIsSyncing(true);
     try {
       await syncDataToCloud(userEmail, {
@@ -167,20 +167,9 @@ export default function HomePage() {
     }
   }, [theme]);
 
-  // Asynchronously hydrate from IndexedDB if budgets with high-res photos exist
-  useEffect(() => {
-    getBudgetsFromIndexedDb()
-      .then((idbBudgets) => {
-        if (idbBudgets && Array.isArray(idbBudgets) && idbBudgets.length > 0) {
-          setBudgets(idbBudgets as Budget[]);
-        }
-      })
-      .catch(() => {});
-  }, []);
-
   // Função central para buscar e atualizar todos os dados da nuvem em tempo real
-  const refreshDataFromCloud = useCallback(async (notify: boolean = false) => {
-    const targetEmail = (session?.email || profile.email || 'jl.automotive@gmail.com')
+  const refreshDataFromCloud = useCallback(async (notify: boolean = false, forceEmail?: string) => {
+    const targetEmail = (forceEmail || session?.email || profile.email || 'renatof.rcc@gmail.com')
       .trim()
       .toLowerCase();
 
@@ -231,7 +220,7 @@ export default function HomePage() {
 
   // Sincronização em tempo real entre dispositivos: SSE Live Stream + Polling de segurança + Eventos de foco
   useEffect(() => {
-    const targetEmail = (session?.email || profile.email || 'jl.automotive@gmail.com')
+    const targetEmail = (session?.email || profile.email || 'renatof.rcc@gmail.com')
       .trim()
       .toLowerCase();
 
@@ -246,7 +235,7 @@ export default function HomePage() {
       refreshDataFromCloud();
     });
 
-    // 3. Polling de versão a cada 2.5 segundos (à prova de falhas para telas de celular em espera)
+    // 3. Polling de versão a cada 2.0 segundos (verificando timestamp persistido no PostgreSQL)
     let lastKnownVersion = 0;
     const intervalId = setInterval(async () => {
       if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
@@ -256,7 +245,7 @@ export default function HomePage() {
           refreshDataFromCloud();
         }
       }
-    }, 2500);
+    }, 2000);
 
     // 4. Sincronização imediata ao destravar a tela ou voltar para o navegador
     const handleActiveFocus = () => {
@@ -517,15 +506,15 @@ export default function HomePage() {
           theme={theme}
           onToggleTheme={handleToggleTheme}
           profile={profile}
-          onLoginSuccess={(newSession, userData) => {
+          onLoginSuccess={async (newSession, userData) => {
             setSession(newSession);
             saveStoredSession(newSession);
             if (userData) {
               const loadedProfile: UserProfile = {
-                name: userData.name || profile.name || 'JL Automotive',
-                phone: userData.phone || profile.phone || '(44) 99937-0049',
+                name: userData.name || profile.name || 'Renato Ferreira dos Santos',
+                phone: userData.phone || profile.phone || '(44) 99901-5155',
                 email: userData.email || newSession.email,
-                password: userData.password || profile.password || 'admin',
+                password: userData.password || profile.password || 'rema9006',
                 workshopName:
                   userData.workshopName || profile.workshopName || 'JL Automotive & Pintura Automotiva',
                 workshopAddress: userData.workshopAddress || profile.workshopAddress || '',
@@ -533,6 +522,8 @@ export default function HomePage() {
               setProfile(loadedProfile);
               saveStoredProfile(loadedProfile);
             }
+            // Baixa imediatamente todos os orçamentos, lançamentos, clientes e agenda da nuvem
+            await refreshDataFromCloud(false, newSession.email);
             showToast(`Bem-vindo ao JL Automotive, ${userData?.name || profile.name || 'Usuário'}!`);
           }}
           onOpenFirstAccess={() => setIsFirstAccessModalOpen(true)}
@@ -544,28 +535,30 @@ export default function HomePage() {
             key="first-access-modal"
             isOpen={isFirstAccessModalOpen}
             profile={profile}
-            onSaveProfile={(updatedProfile) => {
+            onSaveProfile={async (updatedProfile) => {
               handleSaveProfile(updatedProfile);
               const newSession: AuthSession = {
-                email: updatedProfile.email || 'jl.automotive@gmail.com',
-                name: updatedProfile.name || 'JL Automotive',
+                email: updatedProfile.email || 'renatof.rcc@gmail.com',
+                name: updatedProfile.name || 'Renato Ferreira dos Santos',
                 loggedInAt: new Date().toISOString(),
               };
               setSession(newSession);
               saveStoredSession(newSession);
+              await refreshDataFromCloud(false, newSession.email);
               showToast(`Perfil cadastrado com sucesso! Bem-vindo(a) ao JL Automotive.`);
             }}
             onClose={() => setIsFirstAccessModalOpen(false)}
             theme={theme}
             isFirstAccess={true}
-            onFirstAccessSuccess={(updatedProfile) => {
+            onFirstAccessSuccess={async (updatedProfile) => {
               const newSession: AuthSession = {
-                email: updatedProfile.email || 'jl.automotive@gmail.com',
-                name: updatedProfile.name || 'JL Automotive',
+                email: updatedProfile.email || 'renatof.rcc@gmail.com',
+                name: updatedProfile.name || 'Renato Ferreira dos Santos',
                 loggedInAt: new Date().toISOString(),
               };
               setSession(newSession);
               saveStoredSession(newSession);
+              await refreshDataFromCloud(false, newSession.email);
               showToast(`Perfil cadastrado com sucesso! Bem-vindo(a) ao JL Automotive.`);
             }}
           />

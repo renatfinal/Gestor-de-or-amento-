@@ -262,11 +262,11 @@ const INITIAL_TRANSACTIONS: FinancialTransaction[] = [
 ];
 
 const INITIAL_PROFILE: UserProfile = {
-  name: 'JL Automotive',
-  phone: '(44) 99937-0049',
-  email: 'jl.automotive@gmail.com',
-  password: 'admin',
-  workshopName: 'JL Automotive - Funilaria & Pintura',
+  name: 'Renato Ferreira dos Santos',
+  phone: '(44) 99901-5155',
+  email: 'renatof.rcc@gmail.com',
+  password: 'rema9006',
+  workshopName: 'JL Automotive & Pintura Automotiva',
   workshopAddress: 'Rua Guilherme Naimann 198, Jardim Bandeirantes - CEP: 87308-410 - Campo Mourão - PR',
 };
 

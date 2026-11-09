@@ -97,13 +97,60 @@ export async function updateUserPassword(emailOrUid: string, newPassword: string
   }
 }
 
+// --- WORKSPACE COMPARTILHADO DA OFICINA ---
+export function getCanonicalWorkspaceUserId(userId: string): string {
+  const clean = (userId || '').trim().toLowerCase();
+  if (
+    !clean ||
+    clean === 'default_user' ||
+    clean === 'renatof.rcc@gmail.com' ||
+    clean === 'jl.automotive@gmail.com' ||
+    clean.includes('jl.automotive') ||
+    clean.includes('jlautomotive')
+  ) {
+    return 'renatof.rcc@gmail.com';
+  }
+  return clean;
+}
+
+export async function touchWorkspaceSync(userId: string) {
+  const canonicalId = getCanonicalWorkspaceUserId(userId);
+  try {
+    await db
+      .update(users)
+      .set({ updatedAt: new Date() })
+      .where(
+        or(
+          sql`LOWER(${users.email}) = LOWER(${canonicalId})`,
+          sql`LOWER(${users.uid}) = LOWER(${canonicalId})`
+        )
+      );
+  } catch (err) {
+    console.warn('Error touching workspace sync:', err);
+  }
+}
+
+export async function getWorkspaceSyncTimestamp(userId: string): Promise<number> {
+  const canonicalId = getCanonicalWorkspaceUserId(userId);
+  try {
+    const user = await getUserByEmail(canonicalId);
+    if (user?.updatedAt) {
+      return new Date(user.updatedAt).getTime();
+    }
+  } catch (err) {
+    console.warn('Error reading workspace sync timestamp:', err);
+  }
+  return Date.now();
+}
+
 // --- CLIENTES ---
 export async function getClientsByUser(userId: string) {
+  const targetUserId = getCanonicalWorkspaceUserId(userId);
   try {
     return await db
       .select()
       .from(clients)
-      .where(eq(clients.userId, userId))
+      .where(eq(clients.userId, targetUserId))
       .orderBy(asc(clients.name));
   } catch (error) {
     console.error('Error in getClientsByUser:', error);
@@ -122,12 +169,13 @@ export async function upsertClient(clientData: {
   lastVehicle?: string;
   totalBudgetsCount?: number;
 }) {
+  const targetUserId = getCanonicalWorkspaceUserId(clientData.userId);
   try {
     const result = await db
       .insert(clients)
       .values({
         id: clientData.id,
-        userId: clientData.userId,
+        userId: targetUserId,
         name: clientData.name,
         phone: clientData.phone || '',
         email: clientData.email || '',
@@ -158,8 +206,9 @@ export async function upsertClient(clientData: {
 }
 
 export async function deleteClient(id: string, userId: string) {
+  const targetUserId = getCanonicalWorkspaceUserId(userId);
   try {
-    await db.delete(clients).where(and(eq(clients.id, id), eq(clients.userId, userId)));
+    await db.delete(clients).where(and(eq(clients.id, id), eq(clients.userId, targetUserId)));
     return { success: true };
   } catch (error) {
     console.error('Error in deleteClient:', error);
@@ -169,11 +218,12 @@ export async function deleteClient(id: string, userId: string) {
 
 // --- ORÇAMENTOS ---
 export async function getBudgetsByUser(userId: string) {
+  const targetUserId = getCanonicalWorkspaceUserId(userId);
   try {
     return await db
       .select()
       .from(budgets)
-      .where(eq(budgets.userId, userId))
+      .where(eq(budgets.userId, targetUserId))
       .orderBy(desc(budgets.createdAt));
   } catch (error) {
     console.error('Error in getBudgetsByUser:', error);
@@ -198,12 +248,13 @@ export async function upsertBudget(budgetData: {
   status: string;
   photos?: any;
 }) {
+  const targetUserId = getCanonicalWorkspaceUserId(budgetData.userId);
   try {
     const result = await db
       .insert(budgets)
       .values({
         id: budgetData.id,
-        userId: budgetData.userId,
+        userId: targetUserId,
         clientName: budgetData.clientName,
         phone: budgetData.phone || '',
         vehicleModel: budgetData.vehicleModel || '',
@@ -246,8 +297,9 @@ export async function upsertBudget(budgetData: {
 }
 
 export async function deleteBudget(id: string, userId: string) {
+  const targetUserId = getCanonicalWorkspaceUserId(userId);
   try {
-    await db.delete(budgets).where(and(eq(budgets.id, id), eq(budgets.userId, userId)));
+    await db.delete(budgets).where(and(eq(budgets.id, id), eq(budgets.userId, targetUserId)));
     return { success: true };
   } catch (error) {
     console.error('Error in deleteBudget:', error);
@@ -257,11 +309,12 @@ export async function deleteBudget(id: string, userId: string) {
 
 // --- TRANSAÇÕES (FINANCEIRO & BALANCETE) ---
 export async function getTransactionsByUser(userId: string) {
+  const targetUserId = getCanonicalWorkspaceUserId(userId);
   try {
     return await db
       .select()
       .from(transactions)
-      .where(eq(transactions.userId, userId))
+      .where(eq(transactions.userId, targetUserId))
       .orderBy(desc(transactions.date));
   } catch (error) {
     console.error('Error in getTransactionsByUser:', error);
@@ -283,12 +336,13 @@ export async function upsertTransaction(txData: {
   budgetId?: string;
   clientName?: string;
 }) {
+  const targetUserId = getCanonicalWorkspaceUserId(txData.userId);
   try {
     const result = await db
       .insert(transactions)
       .values({
         id: txData.id,
-        userId: txData.userId,
+        userId: targetUserId,
         type: txData.type,
         description: txData.description,
         category: txData.category || '',
@@ -324,10 +378,11 @@ export async function upsertTransaction(txData: {
 }
 
 export async function deleteTransaction(id: string, userId: string) {
+  const targetUserId = getCanonicalWorkspaceUserId(userId);
   try {
     await db
       .delete(transactions)
-      .where(and(eq(transactions.id, id), eq(transactions.userId, userId)));
+      .where(and(eq(transactions.id, id), eq(transactions.userId, targetUserId)));
     return { success: true };
   } catch (error) {
     console.error('Error in deleteTransaction:', error);
@@ -337,11 +392,12 @@ export async function deleteTransaction(id: string, userId: string) {
 
 // --- EVENTOS & NOTAS ---
 export async function getEventsByUser(userId: string) {
+  const targetUserId = getCanonicalWorkspaceUserId(userId);
   try {
     return await db
       .select()
       .from(events)
-      .where(eq(events.userId, userId))
+      .where(eq(events.userId, targetUserId))
       .orderBy(asc(events.date));
   } catch (error) {
     console.error('Error in getEventsByUser:', error);
@@ -359,12 +415,13 @@ export async function upsertEvent(eventData: {
   color?: string;
   completed?: boolean;
 }) {
+  const targetUserId = getCanonicalWorkspaceUserId(eventData.userId);
   try {
     const result = await db
       .insert(events)
       .values({
         id: eventData.id,
-        userId: eventData.userId,
+        userId: targetUserId,
         title: eventData.title,
         description: eventData.description || '',
         date: eventData.date,
@@ -392,8 +449,9 @@ export async function upsertEvent(eventData: {
 }
 
 export async function deleteEvent(id: string, userId: string) {
+  const targetUserId = getCanonicalWorkspaceUserId(userId);
   try {
-    await db.delete(events).where(and(eq(events.id, id), eq(events.userId, userId)));
+    await db.delete(events).where(and(eq(events.id, id), eq(events.userId, targetUserId)));
     return { success: true };
   } catch (error) {
     console.error('Error in deleteEvent:', error);
@@ -403,11 +461,12 @@ export async function deleteEvent(id: string, userId: string) {
 
 // --- CHECK-LISTS ---
 export async function getChecklistsByUser(userId: string) {
+  const targetUserId = getCanonicalWorkspaceUserId(userId);
   try {
     return await db
       .select()
       .from(checklists)
-      .where(eq(checklists.userId, userId))
+      .where(eq(checklists.userId, targetUserId))
       .orderBy(desc(checklists.createdAt));
   } catch (error) {
     console.error('Error in getChecklistsByUser:', error);
@@ -425,12 +484,13 @@ export async function upsertChecklist(data: {
   items?: any;
   notes?: string;
 }) {
+  const targetUserId = getCanonicalWorkspaceUserId(data.userId);
   try {
     const result = await db
       .insert(checklists)
       .values({
         id: data.id,
-        userId: data.userId,
+        userId: targetUserId,
         budgetId: data.budgetId || '',
         vehicleModel: data.vehicleModel || '',
         plate: data.plate || '',
@@ -459,8 +519,9 @@ export async function upsertChecklist(data: {
 }
 
 export async function deleteChecklist(id: string, userId: string) {
+  const targetUserId = getCanonicalWorkspaceUserId(userId);
   try {
-    await db.delete(checklists).where(and(eq(checklists.id, id), eq(checklists.userId, userId)));
+    await db.delete(checklists).where(and(eq(checklists.id, id), eq(checklists.userId, targetUserId)));
     return { success: true };
   } catch (error) {
     console.error('Error in deleteChecklist:', error);

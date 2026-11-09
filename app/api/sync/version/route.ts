@@ -1,19 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSyncVersion } from '@/lib/syncNotifier';
+import { getWorkspaceSyncTimestamp, getCanonicalWorkspaceUserId } from '@/src/db/queries';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const rawUserId =
-    searchParams.get('userId') || searchParams.get('email') || 'default_user';
-  const userId = rawUserId.trim().toLowerCase();
+    searchParams.get('userId') || searchParams.get('email') || 'renatof.rcc@gmail.com';
+  const canonicalUserId = getCanonicalWorkspaceUserId(rawUserId);
+
+  // Consulta o timestamp persistido no PostgreSQL (compartilhado entre múltiplos containers Cloud Run)
+  const dbVersion = await getWorkspaceSyncTimestamp(canonicalUserId);
+  const memVersion = Math.max(
+    getSyncVersion(canonicalUserId),
+    getSyncVersion(rawUserId.trim().toLowerCase())
+  );
+  const effectiveVersion = Math.max(dbVersion, memVersion);
 
   return NextResponse.json(
     {
       success: true,
-      userId,
-      version: getSyncVersion(userId),
+      userId: canonicalUserId,
+      version: effectiveVersion,
       timestamp: Date.now(),
     },
     {
