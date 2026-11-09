@@ -14,16 +14,19 @@ import {
   ChevronRight,
   FileCheck2,
   Filter,
+  Trash2,
 } from 'lucide-react';
 import { Budget, BudgetStatus, ThemeMode } from '@/lib/types';
 import { getStatusConfig, STATUS_OPTIONS } from '@/lib/statusConfig';
 import { formatBRL } from '@/lib/formatters';
+import { DeleteConfirmModal } from './DeleteConfirmModal';
 
 interface ExistingBudgetsModalProps {
   isOpen: boolean;
   budgets: Budget[];
   onClose: () => void;
   onSelectBudget: (budget: Budget) => void;
+  onDeleteBudget?: (id: string) => void;
   theme: ThemeMode;
 }
 
@@ -32,11 +35,13 @@ export function ExistingBudgetsModal({
   budgets,
   onClose,
   onSelectBudget,
+  onDeleteBudget,
   theme,
 }: ExistingBudgetsModalProps) {
   const isLight = theme !== 'dark-spring';
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('todos');
+  const [budgetToDelete, setBudgetToDelete] = useState<Budget | null>(null);
 
   if (!isOpen) return null;
 
@@ -237,22 +242,39 @@ export function ExistingBudgetsModal({
                         {formatBRL(b.amount)}
                       </span>
 
-                      <button
-                        type="button"
-                        onClick={() => {
-                          onSelectBudget(b);
-                          onClose();
-                        }}
-                        className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black transition-all shadow-xs active:scale-98 cursor-pointer ${
-                          isLight
-                            ? 'bg-[#00FF7F] hover:bg-[#00e676] text-black shadow-emerald-500/20'
-                            : 'bg-emerald-600 hover:bg-emerald-700 text-black'
-                        }`}
-                      >
-                        <Wrench className="w-3.5 h-3.5" />
-                        <span>Alterar Andamento</span>
-                        <ChevronRight className="w-3.5 h-3.5" />
-                      </button>
+                      <div className="flex items-center gap-2">
+                        {onDeleteBudget && (
+                          <button
+                            type="button"
+                            onClick={() => setBudgetToDelete(b)}
+                            className={`p-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                              isLight
+                                ? 'border-red-200 bg-red-50 text-red-600 hover:bg-red-100'
+                                : 'border-red-900/40 bg-red-950/20 text-red-400 hover:bg-red-950/40 hover:border-red-800'
+                            }`}
+                            title="Excluir este orçamento de todos os dispositivos"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onSelectBudget(b);
+                            onClose();
+                          }}
+                          className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black transition-all shadow-xs active:scale-98 cursor-pointer ${
+                            isLight
+                              ? 'bg-[#00FF7F] hover:bg-[#00e676] text-black shadow-emerald-500/20'
+                              : 'bg-emerald-600 hover:bg-emerald-700 text-black'
+                          }`}
+                        >
+                          <Wrench className="w-3.5 h-3.5" />
+                          <span>Alterar Andamento</span>
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                   </div>
 
@@ -292,6 +314,22 @@ export function ExistingBudgetsModal({
           </button>
         </div>
       </div>
+
+      {/* Confirmation Modal to Delete Budget */}
+      {budgetToDelete && (
+        <DeleteConfirmModal
+          isOpen={!!budgetToDelete}
+          title="Excluir Orçamento"
+          message={`Deseja excluir o orçamento de "${budgetToDelete.clientName}" (${budgetToDelete.vehicleModel})? Esta ação apagará o orçamento de forma definitiva em todos os seus computadores e celulares conectados.`}
+          onConfirm={() => {
+            if (budgetToDelete) {
+              onDeleteBudget?.(budgetToDelete.id);
+              setBudgetToDelete(null);
+            }
+          }}
+          onCancel={() => setBudgetToDelete(null)}
+        />
+      )}
     </div>
   );
 }

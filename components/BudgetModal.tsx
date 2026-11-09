@@ -29,6 +29,7 @@ import {
 } from '@/lib/formatters';
 import { downloadBudgetPdf, shareBudget } from '@/lib/pdfGenerator';
 import { CameraCaptureModal } from './CameraCaptureModal';
+import { DeleteConfirmModal } from './DeleteConfirmModal';
 
 interface BudgetModalProps {
   isOpen: boolean;
@@ -36,6 +37,7 @@ interface BudgetModalProps {
   presetDate?: string; // DD/MM/YYYY
   onClose: () => void;
   onSave: (budget: Budget) => void;
+  onDelete?: (id: string) => void;
   theme: ThemeMode;
 }
 
@@ -45,9 +47,11 @@ export function BudgetModal({
   presetDate,
   onClose,
   onSave,
+  onDelete,
   theme,
 }: BudgetModalProps) {
   const isLight = theme !== 'dark-spring';
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   // Form State initialized directly from props
   const [clientName, setClientName] = useState(initialBudget?.clientName || '');
@@ -748,8 +752,24 @@ export function BudgetModal({
               </button>
             </div>
 
-            {/* Right side: Cancelar e Salvar */}
+            {/* Right side: Excluir, Cancelar e Salvar */}
             <div className="flex items-center gap-2 ml-auto">
+              {initialBudget?.id && onDelete && (
+                <button
+                  type="button"
+                  onClick={() => setIsDeleteModalOpen(true)}
+                  className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold border transition-colors cursor-pointer mr-1 ${
+                    isLight
+                      ? 'border-red-200 bg-red-50 text-red-700 hover:bg-red-100'
+                      : 'border-red-900/40 bg-red-950/20 text-red-400 hover:bg-red-950/40'
+                  }`}
+                  title="Excluir este orçamento de todos os dispositivos"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Excluir</span>
+                </button>
+              )}
+
               <button
                 type="button"
                 onClick={onClose}
@@ -777,6 +797,21 @@ export function BudgetModal({
           </div>
         </form>
       </div>
+
+      {/* Confirmation to Delete Budget */}
+      {isDeleteModalOpen && initialBudget?.id && (
+        <DeleteConfirmModal
+          isOpen={isDeleteModalOpen}
+          title="Excluir Orçamento"
+          message={`Deseja realmente apagar o orçamento de "${clientName || initialBudget.clientName}"? Esta ação removerá o orçamento da nuvem e de todos os dispositivos conectados.`}
+          onConfirm={() => {
+            onDelete?.(initialBudget.id);
+            setIsDeleteModalOpen(false);
+            onClose();
+          }}
+          onCancel={() => setIsDeleteModalOpen(false)}
+        />
+      )}
 
       {/* Camera Capture Sub-Modal */}
       <CameraCaptureModal

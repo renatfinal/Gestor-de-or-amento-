@@ -97,20 +97,10 @@ export async function updateUserPassword(emailOrUid: string, newPassword: string
   }
 }
 
-// --- WORKSPACE COMPARTILHADO DA OFICINA ---
+// --- IDENTIFICADOR DE CONTA DO USUÁRIO ---
 export function getCanonicalWorkspaceUserId(userId: string): string {
   const clean = (userId || '').trim().toLowerCase();
-  if (
-    !clean ||
-    clean === 'default_user' ||
-    clean === 'renatof.rcc@gmail.com' ||
-    clean === 'jl.automotive@gmail.com' ||
-    clean.includes('jl.automotive') ||
-    clean.includes('jlautomotive')
-  ) {
-    return 'renatof.rcc@gmail.com';
-  }
-  return clean;
+  return clean || 'renatof.rcc@gmail.com';
 }
 
 export async function touchWorkspaceSync(userId: string) {

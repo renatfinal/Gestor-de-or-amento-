@@ -38,6 +38,8 @@ import {
   saveStoredEvents,
   getStoredChecklists,
   saveStoredChecklists,
+  clearAllStoredUserData,
+  INITIAL_PROFILE,
 } from '@/lib/storage';
 import { getBudgetsFromIndexedDb } from '@/lib/imageStorage';
 import {
@@ -130,8 +132,14 @@ export default function HomePage() {
   };
 
   const handleLogout = () => {
-    clearStoredSession();
+    clearAllStoredUserData();
     setSession(null);
+    setBudgets([]);
+    setClients([]);
+    setTransactions([]);
+    setEvents([]);
+    setChecklists([]);
+    setProfile(INITIAL_PROFILE);
     showToast('Sessão encerrada com sucesso.');
   };
 
@@ -331,6 +339,17 @@ export default function HomePage() {
     triggerCloudSync({ budgets: updatedBudgets, clients: updatedClients });
 
     showToast(`Orçamento para ${budgetToSave.clientName} salvo com sucesso!`);
+  };
+
+  const handleDeleteBudget = (id: string) => {
+    const updated = budgets.filter((b) => b.id !== id);
+    setBudgets(updated);
+    saveStoredBudgets(updated);
+    triggerCloudSync({
+      budgets: updated,
+      deletedItem: { type: 'budget', id },
+    });
+    showToast('Orçamento excluído com sucesso.');
   };
 
   // Clients management
@@ -736,6 +755,7 @@ export default function HomePage() {
         budgets={budgets}
         onClose={() => setIsExistingBudgetsModalOpen(false)}
         onSelectBudget={handleOpenBudgetToEdit}
+        onDeleteBudget={handleDeleteBudget}
         theme={theme}
       />
 
@@ -752,6 +772,7 @@ export default function HomePage() {
             setPresetBudgetDate(undefined);
           }}
           onSave={handleSaveBudget}
+          onDelete={handleDeleteBudget}
           theme={theme}
         />
       )}

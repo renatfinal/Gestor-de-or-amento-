@@ -261,7 +261,7 @@ const INITIAL_TRANSACTIONS: FinancialTransaction[] = [
   },
 ];
 
-const INITIAL_PROFILE: UserProfile = {
+export const INITIAL_PROFILE: UserProfile = {
   name: 'Renato Ferreira dos Santos',
   phone: '(44) 99901-5155',
   email: 'renatof.rcc@gmail.com',
@@ -282,21 +282,14 @@ export function saveStoredTheme(theme: ThemeMode) {
 }
 
 export function getStoredBudgets(): Budget[] {
-  if (typeof window === 'undefined') return INITIAL_BUDGETS;
+  if (typeof window === 'undefined') return [];
   try {
     const item = localStorage.getItem(STORAGE_KEYS.BUDGETS) || localStorage.getItem(LEGACY_STORAGE_KEYS.BUDGETS);
-    if (!item) {
-      try {
-        localStorage.setItem(STORAGE_KEYS.BUDGETS, JSON.stringify(INITIAL_BUDGETS));
-      } catch (e) {
-        console.warn('Could not seed initial budgets to localStorage:', e);
-      }
-      return INITIAL_BUDGETS;
-    }
+    if (!item) return [];
     return JSON.parse(item);
   } catch (err) {
     console.error('Error reading budgets:', err);
-    return INITIAL_BUDGETS;
+    return [];
   }
 }
 
@@ -346,22 +339,15 @@ export function saveStoredBudgets(budgets: Budget[]) {
 }
 
 export function getStoredClients(): Client[] {
-  if (typeof window === 'undefined') return INITIAL_CLIENTS;
+  if (typeof window === 'undefined') return [];
   try {
     const item = localStorage.getItem(STORAGE_KEYS.CLIENTS) || localStorage.getItem(LEGACY_STORAGE_KEYS.CLIENTS);
-    if (!item) {
-      // Sort alphabetically A-Z
-      const sorted = [...INITIAL_CLIENTS].sort((a, b) =>
-        a.name.localeCompare(b.name, 'pt-BR')
-      );
-      localStorage.setItem(STORAGE_KEYS.CLIENTS, JSON.stringify(sorted));
-      return sorted;
-    }
+    if (!item) return [];
     const clients: Client[] = JSON.parse(item);
     return clients.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
   } catch (err) {
     console.error('Error reading clients:', err);
-    return INITIAL_CLIENTS;
+    return [];
   }
 }
 
@@ -376,17 +362,14 @@ export function saveStoredClients(clients: Client[]) {
 }
 
 export function getStoredTransactions(): FinancialTransaction[] {
-  if (typeof window === 'undefined') return INITIAL_TRANSACTIONS;
+  if (typeof window === 'undefined') return [];
   try {
     const item = localStorage.getItem(STORAGE_KEYS.TRANSACTIONS) || localStorage.getItem(LEGACY_STORAGE_KEYS.TRANSACTIONS);
-    if (!item) {
-      localStorage.setItem(STORAGE_KEYS.TRANSACTIONS, JSON.stringify(INITIAL_TRANSACTIONS));
-      return INITIAL_TRANSACTIONS;
-    }
+    if (!item) return [];
     return JSON.parse(item);
   } catch (err) {
     console.error('Error reading transactions:', err);
-    return INITIAL_TRANSACTIONS;
+    return [];
   }
 }
 
@@ -480,6 +463,25 @@ export function clearStoredSession() {
   }
 }
 
+export function clearAllStoredUserData() {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.removeItem(STORAGE_KEYS.BUDGETS);
+    localStorage.removeItem(STORAGE_KEYS.CLIENTS);
+    localStorage.removeItem(STORAGE_KEYS.TRANSACTIONS);
+    localStorage.removeItem(STORAGE_KEYS.PROFILE);
+    localStorage.removeItem(STORAGE_KEYS.EVENTS);
+    localStorage.removeItem(STORAGE_KEYS.CHECKLISTS);
+    localStorage.removeItem('jl_automotive_session_v1');
+    localStorage.removeItem(LEGACY_STORAGE_KEYS.BUDGETS);
+    localStorage.removeItem(LEGACY_STORAGE_KEYS.CLIENTS);
+    localStorage.removeItem(LEGACY_STORAGE_KEYS.TRANSACTIONS);
+    localStorage.removeItem(LEGACY_STORAGE_KEYS.PROFILE);
+  } catch (err) {
+    console.error('Error clearing all user data from storage:', err);
+  }
+}
+
 // Eventos e Notas da Agenda
 const INITIAL_EVENTS: CalendarEvent[] = [
   {
@@ -515,17 +517,14 @@ const INITIAL_EVENTS: CalendarEvent[] = [
 ];
 
 export function getStoredEvents(): CalendarEvent[] {
-  if (typeof window === 'undefined') return INITIAL_EVENTS;
+  if (typeof window === 'undefined') return [];
   try {
     const item = localStorage.getItem(STORAGE_KEYS.EVENTS);
-    if (!item) {
-      localStorage.setItem(STORAGE_KEYS.EVENTS, JSON.stringify(INITIAL_EVENTS));
-      return INITIAL_EVENTS;
-    }
+    if (!item) return [];
     return JSON.parse(item);
   } catch (err) {
     console.error('Error reading events:', err);
-    return INITIAL_EVENTS;
+    return [];
   }
 }
 
@@ -559,17 +558,14 @@ const INITIAL_CHECKLISTS: VehicleChecklist[] = [
 ];
 
 export function getStoredChecklists(): VehicleChecklist[] {
-  if (typeof window === 'undefined') return INITIAL_CHECKLISTS;
+  if (typeof window === 'undefined') return [];
   try {
     const item = localStorage.getItem(STORAGE_KEYS.CHECKLISTS);
-    if (!item) {
-      localStorage.setItem(STORAGE_KEYS.CHECKLISTS, JSON.stringify(INITIAL_CHECKLISTS));
-      return INITIAL_CHECKLISTS;
-    }
+    if (!item) return [];
     return JSON.parse(item);
   } catch (err) {
     console.error('Error reading checklists:', err);
-    return INITIAL_CHECKLISTS;
+    return [];
   }
 }
 
