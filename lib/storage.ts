@@ -1,5 +1,5 @@
 import { Budget, Client, FinancialTransaction, UserProfile, ThemeMode, CalendarEvent, VehicleChecklist } from './types';
-import { saveBudgetsToIndexedDb, getBudgetsFromIndexedDb } from './imageStorage';
+import { saveBudgetsToIndexedDb, clearIndexedDb } from './imageStorage';
 
 const STORAGE_KEYS = {
   BUDGETS: 'jl_automotive_budgets_v1',
@@ -262,12 +262,12 @@ const INITIAL_TRANSACTIONS: FinancialTransaction[] = [
 ];
 
 export const INITIAL_PROFILE: UserProfile = {
-  name: 'Renato Ferreira dos Santos',
-  phone: '(44) 99901-5155',
-  email: 'renatof.rcc@gmail.com',
-  password: 'rema9006',
+  name: '',
+  phone: '',
+  email: '',
+  password: '',
   workshopName: 'JL Automotive & Pintura Automotiva',
-  workshopAddress: 'Rua Guilherme Naimann 198, Jardim Bandeirantes - CEP: 87308-410 - Campo Mourão - PR',
+  workshopAddress: '',
 };
 
 export function getStoredTheme(): ThemeMode {
@@ -387,31 +387,9 @@ export function getStoredProfile(): UserProfile {
   try {
     const item = localStorage.getItem(STORAGE_KEYS.PROFILE) || localStorage.getItem(LEGACY_STORAGE_KEYS.PROFILE);
     if (!item) {
-      localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(INITIAL_PROFILE));
       return INITIAL_PROFILE;
     }
     const parsed: UserProfile = JSON.parse(item);
-    // Automatically modernize workshop name and details if still holding legacy defaults
-    let updated = false;
-    if (parsed.workshopName && /JM Funilaria/i.test(parsed.workshopName)) {
-      parsed.workshopName = parsed.workshopName.replace(/JM Funilaria/gi, 'JL Automotive');
-      updated = true;
-    }
-    if (parsed.email && parsed.email.includes('jm.funilaria')) {
-      parsed.email = 'jl.automotive@gmail.com';
-      updated = true;
-    }
-    if (parsed.workshopAddress && parsed.workshopAddress.includes('Av. das Oficinas')) {
-      parsed.workshopAddress = 'Rua Guilherme Naimann 198, Jardim Bandeirantes - CEP: 87308-410 - Campo Mourão - PR';
-      updated = true;
-    }
-    if (parsed.phone === '(11) 99876-5432') {
-      parsed.phone = '(44) 99937-0049';
-      updated = true;
-    }
-    if (updated) {
-      localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(parsed));
-    }
     return parsed;
   } catch (err) {
     console.error('Error reading profile:', err);
@@ -477,6 +455,7 @@ export function clearAllStoredUserData() {
     localStorage.removeItem(LEGACY_STORAGE_KEYS.CLIENTS);
     localStorage.removeItem(LEGACY_STORAGE_KEYS.TRANSACTIONS);
     localStorage.removeItem(LEGACY_STORAGE_KEYS.PROFILE);
+    clearIndexedDb().catch(() => {});
   } catch (err) {
     console.error('Error clearing all user data from storage:', err);
   }

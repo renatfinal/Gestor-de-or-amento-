@@ -53,6 +53,7 @@ export function CalendarView({
   onOpenFinancialEntry,
   onOpenFinancialExpense,
   onOpenAddClient,
+  onOpenEventModal,
   theme,
 }: CalendarViewProps) {
   const isLight = theme !== 'dark-spring';
@@ -132,7 +133,7 @@ export function CalendarView({
 
   // Actions from day modal
   const handleSelectDayAction = (
-    action: 'budget' | 'entry' | 'expense' | 'add-client',
+    action: 'budget' | 'entry' | 'expense' | 'add-client' | 'event',
     date: Date
   ) => {
     const dd = String(date.getDate()).padStart(2, '0');
@@ -149,6 +150,8 @@ export function CalendarView({
       onOpenFinancialExpense(isoDate);
     } else if (action === 'add-client') {
       onOpenAddClient();
+    } else if (action === 'event' && onOpenEventModal) {
+      onOpenEventModal(isoDate);
     }
   };
 
@@ -267,7 +270,7 @@ export function CalendarView({
                 setCurrentMonth(today.getMonth());
                 setCurrentYear(today.getFullYear());
               }}
-              className={`px-3 py-1.5 rounded-xl text-xs font-black border transition-all ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-black border transition-all cursor-pointer ${
                 isLight
                   ? 'border-zinc-400 bg-white text-black hover:bg-zinc-100 shadow-xs'
                   : 'border-zinc-700 bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
@@ -275,6 +278,21 @@ export function CalendarView({
             >
               Hoje
             </button>
+
+            {onOpenEventModal && (
+              <button
+                type="button"
+                onClick={() => onOpenEventModal(getDayIso(today.getFullYear(), today.getMonth(), today.getDate()))}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black border transition-all cursor-pointer ${
+                  isLight
+                    ? 'border-amber-300 bg-amber-100 text-amber-950 hover:bg-amber-200 shadow-xs'
+                    : 'border-amber-700/70 bg-amber-950/60 text-amber-300 hover:bg-amber-950'
+                }`}
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Evento / Nota</span>
+              </button>
+            )}
           </div>
         </div>
 

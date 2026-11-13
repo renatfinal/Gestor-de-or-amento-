@@ -27,8 +27,15 @@ export const dynamic = 'force-dynamic';
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const rawUserId = searchParams.get('userId') || searchParams.get('email') || 'renatof.rcc@gmail.com';
+    const rawUserId = searchParams.get('userId') || searchParams.get('email') || '';
     const cleanUserId = getCanonicalWorkspaceUserId(rawUserId);
+
+    if (!cleanUserId) {
+      return NextResponse.json(
+        { error: 'Identificador da conta (userId) é obrigatório.' },
+        { status: 400 }
+      );
+    }
 
     // Buscar perfil do usuário para sincronizar dados cadastrais em múltiplos dispositivos
     const userRecord = await getUserByEmail(cleanUserId);
@@ -95,8 +102,15 @@ export async function POST(req: NextRequest) {
       deletedItem,
     } = body;
 
-    const rawTarget = userId || (profile && profile.email) || 'renatof.rcc@gmail.com';
+    const rawTarget = userId || (profile && profile.email) || '';
     const targetUserId = getCanonicalWorkspaceUserId(rawTarget);
+
+    if (!targetUserId) {
+      return NextResponse.json(
+        { error: 'Identificador da conta (userId) é obrigatório para sincronizar.' },
+        { status: 400 }
+      );
+    }
 
     // 0. Processamento de Exclusão no Banco de Dados
     if (deletedItem && deletedItem.id && deletedItem.type) {
@@ -113,18 +127,20 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 1. Sync User Profile se fornecido
+    // 1. Sync User Profile se fornecido explicitamente para a mesma conta
     if (profile && profile.email) {
       const cleanProfileEmail = profile.email.trim().toLowerCase();
-      await getOrCreateUser({
-        uid: targetUserId,
-        email: cleanProfileEmail,
-        name: profile.name,
-        phone: profile.phone,
-        workshopName: profile.workshopName,
-        workshopAddress: profile.workshopAddress,
-        password: profile.password,
-      });
+      if (cleanProfileEmail === targetUserId) {
+        await getOrCreateUser({
+          uid: targetUserId,
+          email: cleanProfileEmail,
+          name: profile.name,
+          phone: profile.phone,
+          workshopName: profile.workshopName,
+          workshopAddress: profile.workshopAddress,
+          password: profile.password,
+        });
+      }
     }
 
     // 2. Sync Clientes
@@ -234,8 +250,6 @@ export async function POST(req: NextRequest) {
 
     // Notifica em tempo real todos os dispositivos que estão com a conta aberta
     notifySync(targetUserId);
-    notifySync('renatof.rcc@gmail.com');
-    notifySync('jl.automotive@gmail.com');
 
     return NextResponse.json({
       success: true,

@@ -104,7 +104,7 @@ export function DatabaseTablesModal({
     e.preventDefault();
     if (!newEventTitle.trim()) return;
     const event: CalendarEvent = {
-      id: `ev_${Date.now()}`,
+      id: `ev_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
       title: newEventTitle.trim(),
       description: newEventDesc.trim(),
       date: newEventDate,
@@ -132,7 +132,7 @@ export function DatabaseTablesModal({
     e.preventDefault();
     if (!newChkTitle.trim()) return;
     const chk: VehicleChecklist = {
-      id: `chk_${Date.now()}`,
+      id: `chk_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
       title: newChkTitle.trim(),
       vehicleModel: newChkModel.trim(),
       plate: newChkPlate.trim(),

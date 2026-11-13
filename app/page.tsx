@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   FilePlus,
   ArrowDownLeft,
   ArrowUpRight,
   Wrench,
   CheckCircle2,
+  AlertCircle,
 } from 'lucide-react';
 import {
   ActiveTab,
@@ -27,7 +28,6 @@ import {
   getStoredTransactions,
   getStoredSession,
   saveStoredSession,
-  clearStoredSession,
   AuthSession,
   saveStoredBudgets,
   saveStoredClients,
@@ -41,7 +41,6 @@ import {
   clearAllStoredUserData,
   INITIAL_PROFILE,
 } from '@/lib/storage';
-import { getBudgetsFromIndexedDb } from '@/lib/imageStorage';
 import {
   syncDataToCloud,
   fetchCloudData,
@@ -59,6 +58,7 @@ import { BalanceteView } from '@/components/BalanceteView';
 import { ProfileModal } from '@/components/ProfileModal';
 import { LoginPage } from '@/components/LoginPage';
 import { DatabaseTablesModal } from '@/components/DatabaseTablesModal';
+import { EventModal } from '@/components/EventModal';
 
 export default function HomePage() {
   const mounted = React.useSyncExternalStore(
@@ -94,12 +94,31 @@ export default function HomePage() {
 
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isFirstAccessModalOpen, setIsFirstAccessModalOpen] = useState(false);
+  const [isEventModalOpen, setIsEventModalOpen] = useState(false);
+  const [presetEventDate, setPresetEventDate] = useState<string | undefined>(undefined);
 
   // Authentication Session
   const [session, setSession] = useState<AuthSession | null>(() => getStoredSession());
 
-  // Real-time automatic Cloud SQL synchronization
-  const triggerCloudSync = async (overrides?: {
+  // Refs to avoid effect teardown / stale version tracking
+  const profileRef = useRef(profile);
+  useEffect(() => {
+    profileRef.current = profile;
+  }, [profile]);
+  const lastKnownVersionRef = useRef<number>(0);
+
+  // Success / error toast message
+  const [toastState, setToastState] = useState<{ message: string; isError?: boolean } | null>(null);
+
+  const showToast = useCallback((msg: string, isError: boolean = false) => {
+    setToastState({ message: msg, isError });
+    setTimeout(() => {
+      setToastState(null);
+    }, 3600);
+  }, []);
+
+  // Targeted real-time automatic Cloud SQL synchronization
+  const triggerCloudSync = async (overrides: {
     budgets?: Budget[];
     clients?: Client[];
     transactions?: FinancialTransaction[];
@@ -110,22 +129,32 @@ export default function HomePage() {
       type: 'transaction' | 'budget' | 'client' | 'event' | 'checklist';
       id: string;
     };
-  }) => {
-    const userEmail = (session?.email || profile.email || 'renatof.rcc@gmail.com').trim().toLowerCase();
+    targetEmail?: string;
+  }): Promise<{ success: boolean; error?: string }> => {
+    const userEmail = (overrides.targetEmail || session?.email || '').trim().toLowerCase();
+    if (!userEmail) {
+      return { success: false, error: 'Sessão não autenticada. Entre com seu e-mail e senha.' };
+    }
+
     setIsSyncing(true);
     try {
-      await syncDataToCloud(userEmail, {
-        budgets: overrides?.budgets ?? budgets,
-        clients: overrides?.clients ?? clients,
-        transactions: overrides?.transactions ?? transactions,
-        events: overrides?.events ?? events,
-        checklists: overrides?.checklists ?? checklists,
-        profile: overrides?.profile ?? profile,
-        deletedItem: overrides?.deletedItem,
-      });
-      setLastSyncTime(new Date());
-    } catch (e) {
-      console.warn('Real-time sync to Cloud SQL notice:', e);
+      const payload: Parameters<typeof syncDataToCloud>[1] = {};
+      if (overrides.budgets !== undefined) payload.budgets = overrides.budgets;
+      if (overrides.clients !== undefined) payload.clients = overrides.clients;
+      if (overrides.transactions !== undefined) payload.transactions = overrides.transactions;
+      if (overrides.events !== undefined) payload.events = overrides.events;
+      if (overrides.checklists !== undefined) payload.checklists = overrides.checklists;
+      if (overrides.profile !== undefined) payload.profile = overrides.profile;
+      if (overrides.deletedItem !== undefined) payload.deletedItem = overrides.deletedItem;
+
+      const res = await syncDataToCloud(userEmail, payload);
+      if (res.success) {
+        setLastSyncTime(new Date());
+      }
+      return res;
+    } catch (e: any) {
+      console.warn('Real-time sync to Cloud SQL error:', e);
+      return { success: false, error: e?.message || 'Erro de conexão com o banco de dados.' };
     } finally {
       setIsSyncing(false);
     }
@@ -133,6 +162,7 @@ export default function HomePage() {
 
   const handleLogout = () => {
     clearAllStoredUserData();
+    lastKnownVersionRef.current = 0;
     setSession(null);
     setBudgets([]);
     setClients([]);
@@ -153,16 +183,6 @@ export default function HomePage() {
     setIsBudgetModalOpen(true);
   };
 
-  // Success toast message
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => {
-      setToastMessage(null);
-    }, 3200);
-  };
-
   // Update HTML class when theme changes
   useEffect(() => {
     if (typeof document !== 'undefined') {
@@ -175,82 +195,85 @@ export default function HomePage() {
     }
   }, [theme]);
 
-  // Função central para buscar e atualizar todos os dados da nuvem em tempo real
-  const refreshDataFromCloud = useCallback(async (notify: boolean = false, forceEmail?: string) => {
-    const targetEmail = (forceEmail || session?.email || profile.email || 'renatof.rcc@gmail.com')
-      .trim()
-      .toLowerCase();
+  // Função central para buscar e atualizar todos os dados da conta autenticada na nuvem
+  const refreshDataFromCloud = useCallback(
+    async (notify: boolean = false, forceEmail?: string) => {
+      const targetEmail = (forceEmail || session?.email || '').trim().toLowerCase();
+      if (!targetEmail) return;
 
-    try {
-      const cloudData = await fetchCloudData(targetEmail);
-      if (cloudData) {
-        if (cloudData.user) {
-          const syncedProfile: UserProfile = {
-            name: cloudData.user.name || profile.name,
-            phone: cloudData.user.phone || profile.phone,
-            email: cloudData.user.email || profile.email,
-            password: cloudData.user.password || profile.password,
-            workshopName: cloudData.user.workshopName || profile.workshopName,
-            workshopAddress: cloudData.user.workshopAddress || profile.workshopAddress,
-          };
-          setProfile(syncedProfile);
-          saveStoredProfile(syncedProfile);
+      try {
+        const cloudData = await fetchCloudData(targetEmail);
+        if (cloudData) {
+          if (cloudData.user) {
+            const prev = profileRef.current;
+            const syncedProfile: UserProfile = {
+              name: cloudData.user.name || prev.name || '',
+              phone: cloudData.user.phone || prev.phone || '',
+              email: (cloudData.user.email || targetEmail).trim().toLowerCase(),
+              password: cloudData.user.password || prev.password || '',
+              workshopName:
+                cloudData.user.workshopName ||
+                prev.workshopName ||
+                'JL Automotive & Pintura Automotiva',
+              workshopAddress: cloudData.user.workshopAddress ?? prev.workshopAddress ?? '',
+            };
+            setProfile(syncedProfile);
+            saveStoredProfile(syncedProfile);
+          }
+          if (Array.isArray(cloudData.budgets)) {
+            setBudgets(cloudData.budgets);
+            saveStoredBudgets(cloudData.budgets);
+          }
+          if (Array.isArray(cloudData.clients)) {
+            setClients(cloudData.clients);
+            saveStoredClients(cloudData.clients);
+          }
+          if (Array.isArray(cloudData.transactions)) {
+            setTransactions(cloudData.transactions);
+            saveStoredTransactions(cloudData.transactions);
+          }
+          if (Array.isArray(cloudData.events)) {
+            setEvents(cloudData.events);
+            saveStoredEvents(cloudData.events);
+          }
+          if (Array.isArray(cloudData.checklists)) {
+            setChecklists(cloudData.checklists);
+            saveStoredChecklists(cloudData.checklists);
+          }
+          setLastSyncTime(new Date());
+          if (notify) {
+            showToast('Dados sincronizados com a nuvem em tempo real!');
+          }
         }
-        if (Array.isArray(cloudData.budgets)) {
-          setBudgets(cloudData.budgets);
-          saveStoredBudgets(cloudData.budgets);
-        }
-        if (Array.isArray(cloudData.clients)) {
-          setClients(cloudData.clients);
-          saveStoredClients(cloudData.clients);
-        }
-        if (Array.isArray(cloudData.transactions)) {
-          setTransactions(cloudData.transactions);
-          saveStoredTransactions(cloudData.transactions);
-        }
-        if (Array.isArray(cloudData.events)) {
-          setEvents(cloudData.events);
-          saveStoredEvents(cloudData.events);
-        }
-        if (Array.isArray(cloudData.checklists)) {
-          setChecklists(cloudData.checklists);
-          saveStoredChecklists(cloudData.checklists);
-        }
-        setLastSyncTime(new Date());
-        if (notify) {
-          showToast('Dados sincronizados com o servidor em tempo real!');
-        }
+      } catch (err) {
+        console.warn('Real-time cloud refresh notice:', err);
       }
-    } catch (err) {
-      console.warn('Real-time cloud refresh notice:', err);
-    }
-  }, [session?.email, profile.email, profile.name, profile.phone, profile.password, profile.workshopName, profile.workshopAddress]);
+    },
+    [session?.email, showToast]
+  );
 
-  // Sincronização em tempo real entre dispositivos: SSE Live Stream + Polling de segurança + Eventos de foco
+  // Sincronização em tempo real entre dispositivos: SOMENTE quando há sessão autenticada!
   useEffect(() => {
-    const targetEmail = (session?.email || profile.email || 'renatof.rcc@gmail.com')
-      .trim()
-      .toLowerCase();
+    const targetEmail = (session?.email || '').trim().toLowerCase();
+    if (!targetEmail) return;
 
-    // 1. Carga inicial dos dados da conta (agendada de forma assíncrona)
+    // 1. Carga inicial dos dados da conta autenticada
     const initTimer = setTimeout(() => {
-      refreshDataFromCloud();
+      refreshDataFromCloud(false, targetEmail);
     }, 0);
 
     // 2. Ouvinte em tempo real via Server-Sent Events (SSE)
-    // Qualquer alteração feita em um celular notifica imediatamente o outro!
     const unsubscribe = subscribeToLiveSync(targetEmail, () => {
-      refreshDataFromCloud();
+      refreshDataFromCloud(false, targetEmail);
     });
 
     // 3. Polling de versão a cada 2.0 segundos (verificando timestamp persistido no PostgreSQL)
-    let lastKnownVersion = 0;
     const intervalId = setInterval(async () => {
       if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
         const ver = await checkSyncVersion(targetEmail);
-        if (ver > 0 && ver !== lastKnownVersion) {
-          lastKnownVersion = ver;
-          refreshDataFromCloud();
+        if (ver > 0 && ver !== lastKnownVersionRef.current) {
+          lastKnownVersionRef.current = ver;
+          refreshDataFromCloud(false, targetEmail);
         }
       }
     }, 2000);
@@ -258,7 +281,7 @@ export default function HomePage() {
     // 4. Sincronização imediata ao destravar a tela ou voltar para o navegador
     const handleActiveFocus = () => {
       if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
-        refreshDataFromCloud();
+        refreshDataFromCloud(false, targetEmail);
       }
     };
 
@@ -272,7 +295,7 @@ export default function HomePage() {
       window.removeEventListener('focus', handleActiveFocus);
       document.removeEventListener('visibilitychange', handleActiveFocus);
     };
-  }, [session?.email, profile.email, refreshDataFromCloud]);
+  }, [session?.email, refreshDataFromCloud]);
 
   const handleToggleTheme = () => {
     const newTheme: ThemeMode = theme === 'dark-spring' ? 'light-spring' : 'dark-spring';
@@ -280,10 +303,8 @@ export default function HomePage() {
     saveStoredTheme(newTheme);
   };
 
-  // Handle Saving Budget:
-  // Requirement: "Quando Fazer o orçamento e salvar trazer o nome e telefone para essa pagina automático e salvar uma lista de clientes com ordem alfabética"
+  // Handle Saving Budget (envia apenas o orçamento e o cliente alterado para evitar sobrescrever dados de outros dispositivos)
   const handleSaveBudget = (budgetToSave: Budget) => {
-    // 1. Update Budgets
     let updatedBudgets: Budget[];
     const exists = budgets.some((b) => b.id === budgetToSave.id);
     if (exists) {
@@ -295,8 +316,8 @@ export default function HomePage() {
     saveStoredBudgets(updatedBudgets);
 
     let updatedClients = clients;
+    let syncedClient: Client | undefined;
 
-    // 2. Automatically sync Client to alphabetical list
     if (budgetToSave.clientName && budgetToSave.clientName.trim()) {
       const trimmedName = budgetToSave.clientName.trim();
       const existingClientIndex = clients.findIndex(
@@ -304,41 +325,45 @@ export default function HomePage() {
       );
 
       if (existingClientIndex >= 0) {
-        // Update existing client
         updatedClients = clients.map((c, idx) => {
           if (idx === existingClientIndex) {
-            return {
+            syncedClient = {
               ...c,
               phone: budgetToSave.phone || c.phone,
               lastVehicle: budgetToSave.vehicleModel || c.lastVehicle,
               totalBudgetsCount: (c.totalBudgetsCount || 0) + (exists ? 0 : 1),
             };
+            return syncedClient;
           }
           return c;
         });
       } else {
-        // Add new client automatically
-        const newClient: Client = {
-          id: `c_${Date.now()}`,
+        syncedClient = {
+          id: `c_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
           name: trimmedName,
           phone: budgetToSave.phone || '',
           lastVehicle: budgetToSave.vehicleModel || '',
           totalBudgetsCount: 1,
           createdAt: new Date().toISOString(),
         };
-        updatedClients = [...clients, newClient];
+        updatedClients = [...clients, syncedClient];
       }
 
-      // Sort alphabetically A-Z
       updatedClients.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
       setClients(updatedClients);
       saveStoredClients(updatedClients);
     }
 
-    // Sync to Cloud SQL in real time
-    triggerCloudSync({ budgets: updatedBudgets, clients: updatedClients });
-
-    showToast(`Orçamento para ${budgetToSave.clientName} salvo com sucesso!`);
+    triggerCloudSync({
+      budgets: [budgetToSave],
+      ...(syncedClient ? { clients: [syncedClient] } : {}),
+    }).then((res) => {
+      if (res.success) {
+        showToast(`Orçamento para ${budgetToSave.clientName} salvo na nuvem!`);
+      } else {
+        showToast(res.error || 'Erro ao salvar orçamento no banco de dados.', true);
+      }
+    });
   };
 
   const handleDeleteBudget = (id: string) => {
@@ -346,10 +371,14 @@ export default function HomePage() {
     setBudgets(updated);
     saveStoredBudgets(updated);
     triggerCloudSync({
-      budgets: updated,
       deletedItem: { type: 'budget', id },
+    }).then((res) => {
+      if (res.success) {
+        showToast('Orçamento excluído com sucesso.');
+      } else {
+        showToast(res.error || 'Erro ao excluir orçamento no banco.', true);
+      }
     });
-    showToast('Orçamento excluído com sucesso.');
   };
 
   // Clients management
@@ -364,8 +393,13 @@ export default function HomePage() {
     updated.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
     setClients(updated);
     saveStoredClients(updated);
-    triggerCloudSync({ clients: updated });
-    showToast(`Cliente ${client.name} salvo com sucesso!`);
+    triggerCloudSync({ clients: [client] }).then((res) => {
+      if (res.success) {
+        showToast(`Cliente ${client.name} salvo na nuvem!`);
+      } else {
+        showToast(res.error || 'Erro ao salvar cliente no banco.', true);
+      }
+    });
   };
 
   const handleDeleteClient = (clientId: string) => {
@@ -373,10 +407,14 @@ export default function HomePage() {
     setClients(updated);
     saveStoredClients(updated);
     triggerCloudSync({
-      clients: updated,
       deletedItem: { type: 'client', id: clientId },
+    }).then((res) => {
+      if (res.success) {
+        showToast('Cliente removido da lista.');
+      } else {
+        showToast(res.error || 'Erro ao excluir cliente no banco.', true);
+      }
     });
-    showToast('Cliente removido da lista.');
   };
 
   // Financial transactions management
@@ -390,8 +428,13 @@ export default function HomePage() {
     }
     setTransactions(updated);
     saveStoredTransactions(updated);
-    triggerCloudSync({ transactions: updated });
-    showToast(`Lançamento de ${tx.type === 'entrada' ? 'Entrada' : 'Saída'} salvo!`);
+    triggerCloudSync({ transactions: [tx] }).then((res) => {
+      if (res.success) {
+        showToast(`Lançamento de ${tx.type === 'entrada' ? 'Entrada' : 'Saída'} salvo na nuvem!`);
+      } else {
+        showToast(res.error || 'Erro ao salvar lançamento no banco.', true);
+      }
+    });
   };
 
   const handleDeleteTransaction = (id: string) => {
@@ -399,22 +442,35 @@ export default function HomePage() {
     setTransactions(updated);
     saveStoredTransactions(updated);
     triggerCloudSync({
-      transactions: updated,
       deletedItem: { type: 'transaction', id },
+    }).then((res) => {
+      if (res.success) {
+        showToast('Lançamento excluído com sucesso.');
+      } else {
+        showToast(res.error || 'Erro ao excluir lançamento no banco.', true);
+      }
     });
-    showToast('Lançamento excluído com sucesso.');
   };
 
   // Profile save
   const handleSaveProfile = (newProfile: UserProfile) => {
     setProfile(newProfile);
     saveStoredProfile(newProfile);
-    triggerCloudSync({ profile: newProfile });
-    showToast('Perfil atualizado com sucesso!');
+    if (session) {
+      const updatedSession: AuthSession = {
+        ...session,
+        name: newProfile.name || session.name,
+      };
+      setSession(updatedSession);
+      saveStoredSession(updatedSession);
+    }
+    showToast('Perfil atualizado na nuvem com sucesso!');
   };
 
-  // Events & Notes management
-  const handleSaveEvent = (event: CalendarEvent) => {
+  // Events & Notes management (returns Promise so callers verify DB persistence)
+  const handleSaveEvent = async (
+    event: CalendarEvent
+  ): Promise<{ success: boolean; error?: string }> => {
     let updated: CalendarEvent[];
     const exists = events.some((e) => e.id === event.id);
     if (exists) {
@@ -424,19 +480,30 @@ export default function HomePage() {
     }
     setEvents(updated);
     saveStoredEvents(updated);
-    triggerCloudSync({ events: updated });
-    showToast(`Nota/Evento "${event.title}" salvo no banco de dados!`);
+
+    const res = await triggerCloudSync({ events: [event] });
+    if (res.success) {
+      showToast(`Evento/Nota "${event.title}" salvo no banco de dados!`);
+    } else {
+      showToast(res.error || 'Erro ao salvar evento no banco de dados.', true);
+    }
+    return res;
   };
 
-  const handleDeleteEvent = (id: string) => {
+  const handleDeleteEvent = async (id: string): Promise<{ success: boolean; error?: string }> => {
     const updated = events.filter((e) => e.id !== id);
     setEvents(updated);
     saveStoredEvents(updated);
-    triggerCloudSync({
-      events: updated,
+
+    const res = await triggerCloudSync({
       deletedItem: { type: 'event', id },
     });
-    showToast('Nota/Evento removido.');
+    if (res.success) {
+      showToast('Evento/Nota removido do banco de dados.');
+    } else {
+      showToast(res.error || 'Erro ao remover evento no banco de dados.', true);
+    }
+    return res;
   };
 
   // Checklists management
@@ -450,8 +517,13 @@ export default function HomePage() {
     }
     setChecklists(updated);
     saveStoredChecklists(updated);
-    triggerCloudSync({ checklists: updated });
-    showToast(`Check-list "${chk.title}" salvo no banco de dados!`);
+    triggerCloudSync({ checklists: [chk] }).then((res) => {
+      if (res.success) {
+        showToast(`Check-list "${chk.title}" salvo no banco de dados!`);
+      } else {
+        showToast(res.error || 'Erro ao salvar check-list no banco.', true);
+      }
+    });
   };
 
   const handleDeleteChecklist = (id: string) => {
@@ -459,10 +531,14 @@ export default function HomePage() {
     setChecklists(updated);
     saveStoredChecklists(updated);
     triggerCloudSync({
-      checklists: updated,
       deletedItem: { type: 'checklist', id },
+    }).then((res) => {
+      if (res.success) {
+        showToast('Check-list removido.');
+      } else {
+        showToast(res.error || 'Erro ao remover check-list no banco.', true);
+      }
     });
-    showToast('Check-list removido.');
   };
 
   // Actions triggered from Calendar or Quick Buttons
@@ -526,24 +602,38 @@ export default function HomePage() {
           onToggleTheme={handleToggleTheme}
           profile={profile}
           onLoginSuccess={async (newSession, userData) => {
-            setSession(newSession);
-            saveStoredSession(newSession);
+            clearAllStoredUserData();
+            lastKnownVersionRef.current = 0;
+            setBudgets([]);
+            setClients([]);
+            setTransactions([]);
+            setEvents([]);
+            setChecklists([]);
+
+            const cleanSession: AuthSession = {
+              email: newSession.email.trim().toLowerCase(),
+              name: userData?.name || newSession.name || 'JL Automotive',
+              loggedInAt: newSession.loggedInAt,
+            };
+            setSession(cleanSession);
+            saveStoredSession(cleanSession);
+
             if (userData) {
               const loadedProfile: UserProfile = {
-                name: userData.name || profile.name || 'Renato Ferreira dos Santos',
-                phone: userData.phone || profile.phone || '(44) 99901-5155',
-                email: userData.email || newSession.email,
-                password: userData.password || profile.password || 'rema9006',
+                name: userData.name || cleanSession.name,
+                phone: userData.phone || '',
+                email: (userData.email || cleanSession.email).trim().toLowerCase(),
+                password: userData.password || '',
                 workshopName:
-                  userData.workshopName || profile.workshopName || 'JL Automotive & Pintura Automotiva',
-                workshopAddress: userData.workshopAddress || profile.workshopAddress || '',
+                  userData.workshopName || 'JL Automotive & Pintura Automotiva',
+                workshopAddress: userData.workshopAddress || '',
               };
               setProfile(loadedProfile);
               saveStoredProfile(loadedProfile);
             }
-            // Baixa imediatamente todos os orçamentos, lançamentos, clientes e agenda da nuvem
-            await refreshDataFromCloud(false, newSession.email);
-            showToast(`Bem-vindo ao JL Automotive, ${userData?.name || profile.name || 'Usuário'}!`);
+
+            await refreshDataFromCloud(false, cleanSession.email);
+            showToast(`Bem-vindo ao JL Automotive, ${userData?.name || cleanSession.name}!`);
           }}
           onOpenFirstAccess={() => setIsFirstAccessModalOpen(true)}
         />
@@ -553,41 +643,50 @@ export default function HomePage() {
           <ProfileModal
             key="first-access-modal"
             isOpen={isFirstAccessModalOpen}
-            profile={profile}
-            onSaveProfile={async (updatedProfile) => {
-              handleSaveProfile(updatedProfile);
-              const newSession: AuthSession = {
-                email: updatedProfile.email || 'renatof.rcc@gmail.com',
-                name: updatedProfile.name || 'Renato Ferreira dos Santos',
-                loggedInAt: new Date().toISOString(),
-              };
-              setSession(newSession);
-              saveStoredSession(newSession);
-              await refreshDataFromCloud(false, newSession.email);
-              showToast(`Perfil cadastrado com sucesso! Bem-vindo(a) ao JL Automotive.`);
-            }}
+            profile={INITIAL_PROFILE}
+            onSaveProfile={() => {}}
             onClose={() => setIsFirstAccessModalOpen(false)}
             theme={theme}
             isFirstAccess={true}
             onFirstAccessSuccess={async (updatedProfile) => {
+              clearAllStoredUserData();
+              lastKnownVersionRef.current = 0;
+              setBudgets([]);
+              setClients([]);
+              setTransactions([]);
+              setEvents([]);
+              setChecklists([]);
+
+              const cleanEmail = (updatedProfile.email || '').trim().toLowerCase();
               const newSession: AuthSession = {
-                email: updatedProfile.email || 'renatof.rcc@gmail.com',
-                name: updatedProfile.name || 'Renato Ferreira dos Santos',
+                email: cleanEmail,
+                name: updatedProfile.name || 'JL Automotive',
                 loggedInAt: new Date().toISOString(),
               };
+              setProfile(updatedProfile);
+              saveStoredProfile(updatedProfile);
               setSession(newSession);
               saveStoredSession(newSession);
-              await refreshDataFromCloud(false, newSession.email);
-              showToast(`Perfil cadastrado com sucesso! Bem-vindo(a) ao JL Automotive.`);
+
+              await refreshDataFromCloud(false, cleanEmail);
+              showToast('Conta criada na nuvem! Bem-vindo(a) ao JL Automotive.');
             }}
           />
         )}
 
         {/* Toast feedback */}
-        {toastMessage && (
-          <div className="fixed bottom-6 right-6 z-50 bg-emerald-500 text-black px-4 py-3 rounded-2xl shadow-xl flex items-center gap-2.5 font-bold text-xs animate-in slide-in-from-bottom-2">
-            <CheckCircle2 className="w-4 h-4 shrink-0 text-black" />
-            <span>{toastMessage}</span>
+        {toastState && (
+          <div
+            className={`fixed bottom-6 right-6 z-50 px-4 py-3 rounded-2xl shadow-xl flex items-center gap-2.5 font-bold text-xs animate-in slide-in-from-bottom-2 ${
+              toastState.isError ? 'bg-red-600 text-white' : 'bg-emerald-500 text-black'
+            }`}
+          >
+            {toastState.isError ? (
+              <AlertCircle className="w-4 h-4 shrink-0 text-white" />
+            ) : (
+              <CheckCircle2 className="w-4 h-4 shrink-0 text-black" />
+            )}
+            <span>{toastState.message}</span>
           </div>
         )}
       </>
@@ -709,6 +808,10 @@ export default function HomePage() {
             onOpenFinancialEntry={handleOpenFinancialEntry}
             onOpenFinancialExpense={handleOpenFinancialExpense}
             onOpenAddClient={() => setActiveTab('clients')}
+            onOpenEventModal={(presetDate) => {
+              setPresetEventDate(presetDate);
+              setIsEventModalOpen(true);
+            }}
             theme={theme}
           />
         )}
@@ -789,6 +892,23 @@ export default function HomePage() {
         />
       )}
 
+      {/* Modal de Eventos, Notas e Lembretes da Agenda */}
+      {isEventModalOpen && (
+        <EventModal
+          key={presetEventDate || 'event-modal'}
+          isOpen={isEventModalOpen}
+          presetDate={presetEventDate}
+          events={events}
+          onClose={() => {
+            setIsEventModalOpen(false);
+            setPresetEventDate(undefined);
+          }}
+          onSaveEvent={handleSaveEvent}
+          onDeleteEvent={handleDeleteEvent}
+          theme={theme}
+        />
+      )}
+
       {/* Modal de Tabelas Organizadoras e Banco de Dados Cloud SQL */}
       {isDatabaseTablesModalOpen && (
         <DatabaseTablesModal
@@ -806,30 +926,48 @@ export default function HomePage() {
           onSaveChecklist={handleSaveChecklist}
           onDeleteChecklist={handleDeleteChecklist}
           onTriggerSync={async () => {
-            await triggerCloudSync();
-            showToast('Dados sincronizados com sucesso no Cloud SQL!');
+            const res = await triggerCloudSync({
+              budgets,
+              clients,
+              transactions,
+              events,
+              checklists,
+              profile,
+            });
+            if (res.success) {
+              await refreshDataFromCloud(false);
+              showToast('Dados sincronizados com sucesso no Cloud SQL!');
+            } else {
+              showToast(res.error || 'Falha ao sincronizar com o banco de dados.', true);
+            }
           }}
           isSyncing={isSyncing}
           lastSyncTime={lastSyncTime}
         />
       )}
 
-      {/* Floating Success Toast */}
-      {toastMessage && (
+      {/* Floating Success / Error Toast */}
+      {toastState && (
         <div className="fixed top-20 right-4 z-50 animate-in slide-in-from-top duration-200">
           <div
             className={`flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-xl border text-sm font-semibold ${
-              isLight
+              toastState.isError
+                ? 'bg-red-600 text-white border-red-500 shadow-red-950/30'
+                : isLight
                 ? 'bg-white text-zinc-900 border-emerald-400 shadow-emerald-950/10'
                 : 'bg-zinc-900 text-white border-emerald-500/50 shadow-emerald-950/40'
             }`}
           >
             <span
               className={`w-2 h-2 rounded-full ${
-                isLight ? 'bg-[#00FF7F]' : 'bg-emerald-400'
+                toastState.isError
+                  ? 'bg-white'
+                  : isLight
+                  ? 'bg-[#00FF7F]'
+                  : 'bg-emerald-400'
               }`}
             />
-            <span>{toastMessage}</span>
+            <span>{toastState.message}</span>
           </div>
         </div>
       )}

@@ -5,9 +5,12 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const rawUserId =
-    searchParams.get('userId') || searchParams.get('email') || 'default_user';
+  const rawUserId = searchParams.get('userId') || searchParams.get('email') || '';
   const userId = rawUserId.trim().toLowerCase();
+
+  if (!userId) {
+    return new Response('userId é obrigatório', { status: 400 });
+  }
 
   const stream = new ReadableStream({
     start(controller) {

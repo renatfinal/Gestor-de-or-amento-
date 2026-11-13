@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { X, FileText, ArrowDownLeft, ArrowUpRight, UserPlus, Calendar } from 'lucide-react';
+import { X, FileText, ArrowDownLeft, ArrowUpRight, UserPlus, Calendar, StickyNote } from 'lucide-react';
 
 import { ThemeMode } from '@/lib/types';
 
@@ -9,7 +9,7 @@ interface DayActionModalProps {
   isOpen: boolean;
   selectedDate: Date | null;
   onClose: () => void;
-  onSelectAction: (action: 'budget' | 'entry' | 'expense' | 'add-client', date: Date) => void;
+  onSelectAction: (action: 'budget' | 'entry' | 'expense' | 'add-client' | 'event', date: Date) => void;
   theme: ThemeMode;
 }
 
@@ -201,6 +201,42 @@ export function DayActionModal({
               }`}
             >
               Cadastro
+            </span>
+          </button>
+
+          {/* Option 5: Evento / Nota / Lembrete */}
+          <button
+            type="button"
+            onClick={() => {
+              onSelectAction('event', selectedDate);
+              onClose();
+            }}
+            className={`w-full flex items-center justify-between p-3.5 rounded-xl border text-left transition-all group ${
+              isLight
+                ? 'bg-zinc-50 hover:bg-amber-50 border-zinc-200 hover:border-amber-400'
+                : 'bg-zinc-800/60 hover:bg-zinc-800 border-zinc-700/80 hover:border-amber-500'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-lg text-amber-500 font-bold">○</span>
+              <div className="p-2 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                <StickyNote className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="font-semibold text-sm text-zinc-900 dark:text-white">
+                  Evento / Nota / Lembrete
+                </p>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                  Salvar evento, entrega ou lembrete na nuvem
+                </p>
+              </div>
+            </div>
+            <span
+              className={`text-xs font-medium px-2.5 py-1 rounded-full ${
+                isLight ? 'bg-amber-100 text-amber-950' : 'bg-amber-950 text-amber-300'
+              }`}
+            >
+              Agenda
             </span>
           </button>
         </div>

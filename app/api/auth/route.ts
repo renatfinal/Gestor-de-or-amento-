@@ -1,6 +1,52 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth } from '@/src/lib/firebase-admin';
-import { getOrCreateUser, getUserByEmail, updateUserPassword } from '@/src/db/queries';
+import firebaseConfig from '../../../firebase-applet-config.json';
+import {
+  getOrCreateUser,
+  getUserByEmail,
+  updateUserPassword,
+  touchWorkspaceSync,
+} from '@/src/db/queries';
+import { notifySync } from '@/lib/syncNotifier';
+
+async function verifyFirebaseTokenWithFallback(idToken: string): Promise<{
+  uid: string;
+  email?: string;
+  name?: string;
+} | null> {
+  try {
+    const decoded = await adminAuth.verifyIdToken(idToken);
+    return {
+      uid: decoded.uid,
+      email: decoded.email,
+      name: decoded.name,
+    };
+  } catch (adminErr) {
+    // Fallback to Firebase Auth REST lookup if server lacks ADC service account
+    try {
+      const resp = await fetch(
+        `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${firebaseConfig.apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken }),
+        }
+      );
+      if (!resp.ok) return null;
+      const json = await resp.json();
+      const fbUser = json?.users?.[0];
+      if (!fbUser?.email) return null;
+      return {
+        uid: fbUser.localId || fbUser.email,
+        email: fbUser.email,
+        name: fbUser.displayName,
+      };
+    } catch {
+      console.warn('Firebase token verification failed:', adminErr);
+      return null;
+    }
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -11,23 +57,27 @@ export async function POST(req: NextRequest) {
     const cleanEmail = (email || '').trim().toLowerCase();
     const cleanPassword = (password || '').trim();
 
-    // 1. Caso autenticado via Firebase ID Token (Google OAuth)
+    // 1. Autenticação via Firebase ID Token (Google OAuth)
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const idToken = authHeader.split('Bearer ')[1];
-      try {
-        const decoded = await adminAuth.verifyIdToken(idToken);
-        const user = await getOrCreateUser({
-          uid: decoded.uid,
-          email: (decoded.email || cleanEmail || 'usuario@jlautomotive.com').trim().toLowerCase(),
-          name: (decoded.name || name || 'JL Automotive').trim(),
-          phone: (phone || '(44) 99937-0049').trim(),
-          workshopName: (workshopName || 'JL Automotive - Funilaria & Pintura').trim(),
-          workshopAddress: workshopAddress ? workshopAddress.trim() : undefined,
-        });
-        return NextResponse.json({ success: true, user });
-      } catch (tokenErr) {
-        console.warn('Firebase token verification error, falling back:', tokenErr);
+      const verified = await verifyFirebaseTokenWithFallback(idToken);
+      if (!verified || !verified.email) {
+        return NextResponse.json(
+          { error: 'Token Google inválido ou expirado. Tente entrar novamente.' },
+          { status: 401 }
+        );
       }
+
+      const tokenEmail = verified.email.trim().toLowerCase();
+      const user = await getOrCreateUser({
+        uid: tokenEmail,
+        email: tokenEmail,
+        name: (verified.name || name || 'JL Automotive').trim(),
+        phone: phone ? phone.trim() : undefined,
+        workshopName: workshopName ? workshopName.trim() : undefined,
+        workshopAddress: workshopAddress ? workshopAddress.trim() : undefined,
+      });
+      return NextResponse.json({ success: true, user });
     }
 
     // 2. Esqueci minha Senha / Recuperar Credencial
@@ -82,6 +132,9 @@ export async function POST(req: NextRequest) {
       }
 
       const updated = await updateUserPassword(cleanEmail, cleanPassword);
+      await touchWorkspaceSync(cleanEmail);
+      notifySync(cleanEmail);
+
       return NextResponse.json({
         success: true,
         message: 'Senha alterada com sucesso!',
@@ -98,14 +151,24 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      const uid = cleanEmail;
+      const existing = await getUserByEmail(cleanEmail);
+      if (existing) {
+        return NextResponse.json(
+          {
+            error:
+              'Este e-mail já está cadastrado no sistema. Use "Entrar" para acessar sua conta ou "Esqueci minha Senha".',
+          },
+          { status: 409 }
+        );
+      }
+
       const user = await getOrCreateUser({
-        uid,
+        uid: cleanEmail,
         email: cleanEmail,
         name: (name || 'JL Automotive').trim(),
-        phone: (phone || '(44) 99937-0049').trim(),
+        phone: (phone || '').trim(),
         workshopName: (workshopName || 'JL Automotive - Funilaria & Pintura').trim(),
-        workshopAddress: workshopAddress ? workshopAddress.trim() : undefined,
+        workshopAddress: workshopAddress ? workshopAddress.trim() : '',
         password: cleanPassword,
       });
 
@@ -123,23 +186,6 @@ export async function POST(req: NextRequest) {
 
       const user = await getUserByEmail(cleanEmail);
       if (!user) {
-        // Se usuário ainda não existe mas é uma conta inicial padrão
-        if (
-          cleanEmail === 'jl.automotive@gmail.com' ||
-          cleanEmail === 'renatof.rcc@gmail.com'
-        ) {
-          const uid = cleanEmail;
-          const newUser = await getOrCreateUser({
-            uid,
-            email: cleanEmail,
-            name: (name || 'JL Automotive').trim(),
-            phone: (phone || '(44) 99937-0049').trim(),
-            workshopName: 'JL Automotive - Funilaria & Pintura',
-            password: cleanPassword,
-          });
-          return NextResponse.json({ success: true, user: newUser });
-        }
-
         return NextResponse.json(
           {
             error:
@@ -150,7 +196,7 @@ export async function POST(req: NextRequest) {
       }
 
       const storedPassword = (user.password || '').trim();
-      if (storedPassword && storedPassword !== cleanPassword) {
+      if (!storedPassword || storedPassword !== cleanPassword) {
         return NextResponse.json(
           {
             error:
@@ -165,16 +211,26 @@ export async function POST(req: NextRequest) {
 
     // 6. Atualização de Perfil
     if (action === 'update-profile') {
-      const targetUid = cleanEmail || body.uid || 'default_user';
+      if (!cleanEmail) {
+        return NextResponse.json(
+          { error: 'E-mail da conta é obrigatório para atualizar o perfil.' },
+          { status: 400 }
+        );
+      }
+
       const user = await getOrCreateUser({
-        uid: targetUid,
-        email: cleanEmail || 'jl.automotive@gmail.com',
+        uid: cleanEmail,
+        email: cleanEmail,
         name,
         phone,
         workshopName,
         workshopAddress,
-        password: cleanPassword,
+        password: cleanPassword || undefined,
       });
+
+      await touchWorkspaceSync(cleanEmail);
+      notifySync(cleanEmail);
+
       return NextResponse.json({ success: true, user });
     }
 

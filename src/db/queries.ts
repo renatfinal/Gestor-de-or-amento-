@@ -14,6 +14,9 @@ export async function getOrCreateUser(data: {
 }) {
   try {
     const cleanEmail = (data.email || '').trim().toLowerCase();
+    if (!cleanEmail) {
+      throw new Error('E-mail do usuário é obrigatório.');
+    }
     const existing = await getUserByEmail(cleanEmail);
 
     if (existing) {
@@ -21,11 +24,17 @@ export async function getOrCreateUser(data: {
         .update(users)
         .set({
           email: cleanEmail,
-          ...(data.name ? { name: data.name.trim() } : {}),
-          ...(data.phone ? { phone: data.phone.trim() } : {}),
-          ...(data.workshopName ? { workshopName: data.workshopName.trim() } : {}),
-          ...(data.workshopAddress ? { workshopAddress: data.workshopAddress.trim() } : {}),
-          ...(data.password ? { password: data.password.trim() } : {}),
+          ...(data.name && data.name.trim() ? { name: data.name.trim() } : {}),
+          ...(data.phone && data.phone.trim() ? { phone: data.phone.trim() } : {}),
+          ...(data.workshopName && data.workshopName.trim()
+            ? { workshopName: data.workshopName.trim() }
+            : {}),
+          ...(data.workshopAddress !== undefined
+            ? { workshopAddress: data.workshopAddress.trim() }
+            : {}),
+          ...(data.password && data.password.trim()
+            ? { password: data.password.trim() }
+            : {}),
           updatedAt: new Date(),
         })
         .where(eq(users.id, existing.id))
@@ -36,15 +45,12 @@ export async function getOrCreateUser(data: {
     const result = await db
       .insert(users)
       .values({
-        uid: data.uid || cleanEmail,
+        uid: (data.uid || cleanEmail).trim().toLowerCase(),
         email: cleanEmail,
         name: (data.name || 'JL Automotive').trim(),
-        phone: (data.phone || '(44) 99937-0049').trim(),
+        phone: (data.phone || '').trim(),
         workshopName: (data.workshopName || 'JL Automotive - Funilaria & Pintura').trim(),
-        workshopAddress: (
-          data.workshopAddress ||
-          'Rua Guilherme Naimann 198, Jardim Bandeirantes - CEP: 87308-410 - Campo Mourão - PR'
-        ).trim(),
+        workshopAddress: (data.workshopAddress || '').trim(),
         password: (data.password || '').trim(),
       })
       .returning();
@@ -99,8 +105,7 @@ export async function updateUserPassword(emailOrUid: string, newPassword: string
 
 // --- IDENTIFICADOR DE CONTA DO USUÁRIO ---
 export function getCanonicalWorkspaceUserId(userId: string): string {
-  const clean = (userId || '').trim().toLowerCase();
-  return clean || 'renatof.rcc@gmail.com';
+  return (userId || '').trim().toLowerCase();
 }
 
 export async function touchWorkspaceSync(userId: string) {
@@ -160,6 +165,7 @@ export async function upsertClient(clientData: {
   totalBudgetsCount?: number;
 }) {
   const targetUserId = getCanonicalWorkspaceUserId(clientData.userId);
+  if (!targetUserId) throw new Error('userId é obrigatório para salvar cliente.');
   try {
     const result = await db
       .insert(clients)
@@ -186,6 +192,7 @@ export async function upsertClient(clientData: {
           totalBudgetsCount: clientData.totalBudgetsCount ?? 1,
           updatedAt: new Date(),
         },
+        setWhere: eq(clients.userId, targetUserId),
       })
       .returning();
     return result[0];
@@ -239,6 +246,7 @@ export async function upsertBudget(budgetData: {
   photos?: any;
 }) {
   const targetUserId = getCanonicalWorkspaceUserId(budgetData.userId);
+  if (!targetUserId) throw new Error('userId é obrigatório para salvar orçamento.');
   try {
     const result = await db
       .insert(budgets)
@@ -277,6 +285,7 @@ export async function upsertBudget(budgetData: {
           photos: budgetData.photos || [],
           updatedAt: new Date(),
         },
+        setWhere: eq(budgets.userId, targetUserId),
       })
       .returning();
     return result[0];
@@ -327,6 +336,7 @@ export async function upsertTransaction(txData: {
   clientName?: string;
 }) {
   const targetUserId = getCanonicalWorkspaceUserId(txData.userId);
+  if (!targetUserId) throw new Error('userId é obrigatório para salvar transação.');
   try {
     const result = await db
       .insert(transactions)
@@ -358,6 +368,7 @@ export async function upsertTransaction(txData: {
           budgetId: txData.budgetId || '',
           clientName: txData.clientName || '',
         },
+        setWhere: eq(transactions.userId, targetUserId),
       })
       .returning();
     return result[0];
@@ -406,6 +417,7 @@ export async function upsertEvent(eventData: {
   completed?: boolean;
 }) {
   const targetUserId = getCanonicalWorkspaceUserId(eventData.userId);
+  if (!targetUserId) throw new Error('userId é obrigatório para salvar evento.');
   try {
     const result = await db
       .insert(events)
@@ -429,6 +441,7 @@ export async function upsertEvent(eventData: {
           color: eventData.color || '#10b981',
           completed: eventData.completed ?? false,
         },
+        setWhere: eq(events.userId, targetUserId),
       })
       .returning();
     return result[0];
@@ -475,6 +488,7 @@ export async function upsertChecklist(data: {
   notes?: string;
 }) {
   const targetUserId = getCanonicalWorkspaceUserId(data.userId);
+  if (!targetUserId) throw new Error('userId é obrigatório para salvar check-list.');
   try {
     const result = await db
       .insert(checklists)
@@ -499,6 +513,7 @@ export async function upsertChecklist(data: {
           notes: data.notes || '',
           updatedAt: new Date(),
         },
+        setWhere: eq(checklists.userId, targetUserId),
       })
       .returning();
     return result[0];

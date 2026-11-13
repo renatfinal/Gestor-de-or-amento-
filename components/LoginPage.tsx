@@ -59,7 +59,7 @@ export function LoginPage({
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [resetSuccessMessage, setResetSuccessMessage] = useState<string | null>(null);
 
-  // Handle Login submission with Cloud SQL database
+  // Handle Login submission with Cloud SQL database (strict Gmail-like cloud auth)
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError(null);
@@ -83,65 +83,26 @@ export function LoginPage({
 
       if (res.success && res.user) {
         const session: AuthSession = {
-          email: res.user.email,
-          name: res.user.name || profile.name || 'JL Automotive',
+          email: (res.user.email || cleanEmail).trim().toLowerCase(),
+          name: res.user.name || 'JL Automotive',
           loggedInAt: new Date().toISOString(),
         };
         onLoginSuccess(session, res.user);
         setIsLoginModalOpen(false);
-        setIsLoggingIn(false);
-        return;
-      }
-
-      if (res.error) {
-        // Fallback local master check only if matching exactly
-        const profileEmail = (profile.email || 'jl.automotive@gmail.com').toLowerCase();
-        const profilePass = profile.password || 'admin';
-
-        const isMasterMatch =
-          cleanEmail === 'jl.automotive@gmail.com' && (cleanPass === 'admin' || cleanPass === profilePass);
-        const isProfileMatch = cleanEmail === profileEmail && cleanPass === profilePass;
-
-        if (isMasterMatch || isProfileMatch) {
-          const session: AuthSession = {
-            email: cleanEmail,
-            name: profile.name || 'JL Automotive',
-            loggedInAt: new Date().toISOString(),
-          };
-          onLoginSuccess(session);
-          setIsLoginModalOpen(false);
-          setIsLoggingIn(false);
-          return;
-        }
-
-        setLoginError(res.error);
-        setIsLoggingIn(false);
-        return;
+      } else {
+        setLoginError(
+          res.error ||
+            'E-mail ou senha incorretos. Verifique suas credenciais ou use "Esqueci minha Senha".'
+        );
       }
     } catch (dbErr: any) {
-      console.warn('DB login attempt fallback to local verification:', dbErr);
+      setLoginError(
+        dbErr?.message ||
+          'Não foi possível conectar ao servidor na nuvem. Verifique sua internet e tente novamente.'
+      );
+    } finally {
+      setIsLoggingIn(false);
     }
-
-    // Fallback local check
-    const profileEmail = (profile.email || 'jl.automotive@gmail.com').toLowerCase();
-    const profilePass = profile.password || 'admin';
-
-    const isMasterMatch =
-      cleanEmail === 'jl.automotive@gmail.com' && (cleanPass === 'admin' || cleanPass === profilePass);
-    const isProfileMatch = cleanEmail === profileEmail && cleanPass === profilePass;
-
-    if (isMasterMatch || isProfileMatch || cleanPass === profilePass) {
-      const session: AuthSession = {
-        email: cleanEmail,
-        name: profile.name || 'JL Automotive',
-        loggedInAt: new Date().toISOString(),
-      };
-      onLoginSuccess(session);
-      setIsLoginModalOpen(false);
-    } else {
-      setLoginError('E-mail ou senha incorretos. Verifique suas credenciais ou use "Esqueci minha Senha".');
-    }
-    setIsLoggingIn(false);
   };
 
   const handleGoogleLogin = async () => {
@@ -150,7 +111,7 @@ export function LoginPage({
     try {
       const result = await signInWithGoogleOAuth();
       if (result.success && result.session) {
-        onLoginSuccess(result.session);
+        onLoginSuccess(result.session, result.user);
         setIsLoginModalOpen(false);
       } else {
         setLoginError(result.error || 'Não foi possível autenticar com o Google.');
@@ -160,13 +121,6 @@ export function LoginPage({
     } finally {
       setIsLoggingIn(false);
     }
-  };
-
-  // Quick fill helper for easy testing
-  const handleQuickFillDemo = () => {
-    setEmail(profile.email || 'renatof.rcc@gmail.com');
-    setPassword(profile.password || 'rema9006');
-    setLoginError(null);
   };
 
   // Handle Forgot Password submit - Queries Cloud SQL directly
@@ -191,16 +145,9 @@ export function LoginPage({
         setRecoveredUser(res.user);
         setForgotSuccess(true);
       } else {
-        if (clean === (profile.email || '').toLowerCase() || clean === 'jl.automotive@gmail.com') {
-          setRecoveredUser({
-            name: profile.name || 'JL Automotive',
-            email: clean,
-            password: profile.password || 'admin',
-          });
-          setForgotSuccess(true);
-        } else {
-          setForgotError(res.error || 'Nenhuma conta encontrada com este e-mail no banco de dados.');
-        }
+        setForgotError(
+          res.error || 'Nenhuma conta encontrada com este e-mail no banco de dados.'
+        );
       }
     } catch (err: any) {
       setForgotError(err?.message || 'Erro de conexão com o banco de dados.');
@@ -553,7 +500,7 @@ export function LoginPage({
                 </div>
               </div>
 
-              {/* Dica rápida para preenchimento fácil */}
+              {/* Informação de sincronização em nuvem */}
               <div
                 className={`p-2.5 rounded-xl text-[11px] flex items-center justify-between gap-2 border ${
                   isLight
@@ -561,16 +508,7 @@ export function LoginPage({
                     : 'bg-zinc-800/50 border-zinc-700/60 text-zinc-400'
                 }`}
               >
-                <span>Conta cadastrada no sistema</span>
-                <button
-                  type="button"
-                  onClick={handleQuickFillDemo}
-                  className={`text-[11px] font-black underline cursor-pointer ${
-                    isLight ? 'text-emerald-800' : 'text-[#00FF7F]'
-                  }`}
-                >
-                  Preencher dados salvos
-                </button>
+                <span>Seus orçamentos e eventos ficam salvos na nuvem vinculados ao seu e-mail.</span>
               </div>
 
               {/* Divisor com opção Google */}

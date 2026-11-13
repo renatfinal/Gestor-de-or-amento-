@@ -180,6 +180,7 @@ export async function authenticateWithDb(payload: {
 export async function signInWithGoogleOAuth(): Promise<{
   success: boolean;
   session?: AuthSession;
+  user?: any;
   error?: string;
 }> {
   try {
@@ -203,14 +204,20 @@ export async function signInWithGoogleOAuth(): Promise<{
     });
 
     const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.success) {
+      return {
+        success: false,
+        error: data.error || 'Falha ao vincular conta Google no banco de dados.',
+      };
+    }
 
     const session: AuthSession = {
-      email: user.email || 'usuario@jlautomotive.com',
-      name: user.displayName || 'JL Automotive',
+      email: (data.user?.email || user.email || '').trim().toLowerCase(),
+      name: data.user?.name || user.displayName || 'JL Automotive',
       loggedInAt: new Date().toISOString(),
     };
 
-    return { success: true, session };
+    return { success: true, session, user: data.user };
   } catch (err: any) {
     console.error('Google Sign-In error:', err);
     return {

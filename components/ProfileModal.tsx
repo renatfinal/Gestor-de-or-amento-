@@ -40,22 +40,25 @@ export function ProfileModal({
 }: ProfileModalProps) {
   const isLight = theme !== 'dark-spring';
 
-  // Form Fields initialized from props
-  const [name, setName] = useState(() =>
-    isFirstAccess && profile.name === 'JL Automotive' ? '' : (profile.name || '')
+  // Form Fields initialized cleanly (never leak previous account data in First Access)
+  const [name, setName] = useState(() => (isFirstAccess ? '' : profile.name || ''));
+  const [phone, setPhone] = useState(() => (isFirstAccess ? '' : profile.phone || ''));
+  const [email, setEmail] = useState(() => (isFirstAccess ? '' : profile.email || ''));
+  const [password, setPassword] = useState(() => (isFirstAccess ? '' : profile.password || ''));
+  const [confirmPassword, setConfirmPassword] = useState(() =>
+    isFirstAccess ? '' : profile.password || ''
   );
-  const [phone, setPhone] = useState(() => profile.phone || '');
-  const [email, setEmail] = useState(() => profile.email || '');
-  const [password, setPassword] = useState(() => profile.password || '');
-  const [confirmPassword, setConfirmPassword] = useState(() => profile.password || '');
-  const [workshopName, setWorkshopName] = useState(
-    () => profile.workshopName || 'JL Automotive & Pintura'
+  const [workshopName, setWorkshopName] = useState(() =>
+    isFirstAccess ? 'JL Automotive & Pintura Automotiva' : profile.workshopName || 'JL Automotive & Pintura'
   );
-  const [workshopAddress, setWorkshopAddress] = useState(() => profile.workshopAddress || '');
+  const [workshopAddress] = useState(() =>
+    isFirstAccess ? '' : profile.workshopAddress || ''
+  );
 
   // UI state
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -64,66 +67,87 @@ export function ProfileModal({
     setPhone(formatPhone(e.target.value));
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
     setSuccessMessage(null);
 
-    if (!name.trim()) {
+    const cleanName = name.trim();
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPassword = password.trim();
+    const cleanConfirm = confirmPassword.trim();
+
+    if (!cleanName) {
       setErrorMessage('Por favor, informe seu Nome Completo.');
       return;
     }
-    if (!email.trim()) {
+    if (!cleanEmail) {
       setErrorMessage('Por favor, informe seu E-mail para acesso.');
       return;
     }
-    if (password && password !== confirmPassword) {
+    if (isFirstAccess && !cleanPassword) {
+      setErrorMessage('Por favor, crie uma senha para proteger sua conta na nuvem.');
+      return;
+    }
+    if (cleanPassword && cleanPassword !== cleanConfirm) {
       setErrorMessage('As senhas não coincidem. Verifique a confirmação de senha.');
       return;
     }
 
-    const cleanEmail = email.trim().toLowerCase();
-    const cleanPassword = password.trim();
+    setIsSaving(true);
+    try {
+      const res = await authenticateWithDb({
+        action: isFirstAccess ? 'first-access' : 'update-profile',
+        email: cleanEmail,
+        password: cleanPassword || undefined,
+        name: cleanName,
+        phone: phone.trim(),
+        workshopName: workshopName.trim(),
+        workshopAddress: workshopAddress.trim(),
+      });
 
-    const updated: UserProfile = {
-      name: name.trim(),
-      phone: phone.trim(),
-      email: cleanEmail,
-      password: cleanPassword,
-      workshopName: workshopName.trim(),
-      workshopAddress: workshopAddress.trim(),
-    };
-
-    // Salva no banco de dados na nuvem imediatamente
-    authenticateWithDb({
-      action: isFirstAccess ? 'register' : 'update-profile',
-      email: cleanEmail,
-      password: cleanPassword,
-      name: name.trim(),
-      phone: phone.trim(),
-      workshopName: workshopName.trim(),
-      workshopAddress: workshopAddress.trim(),
-    }).catch((err) => console.warn('Profile direct DB sync notice:', err));
-
-    onSaveProfile(updated);
-    setSuccessMessage(
-      isFirstAccess
-        ? 'Perfil criado com sucesso! Entrando no sistema...'
-        : 'Perfil atualizado com sucesso!'
-    );
-
-    setTimeout(() => {
-      if (isFirstAccess && onFirstAccessSuccess) {
-        onFirstAccessSuccess(updated);
+      if (!res.success || !res.user) {
+        setErrorMessage(
+          res.error || 'Não foi possível salvar os dados no banco de dados. Tente novamente.'
+        );
+        setIsSaving(false);
+        return;
       }
-      onClose();
-    }, 1000);
+
+      const savedProfile: UserProfile = {
+        name: res.user.name || cleanName,
+        phone: res.user.phone || phone.trim(),
+        email: (res.user.email || cleanEmail).trim().toLowerCase(),
+        password: res.user.password || cleanPassword,
+        workshopName: res.user.workshopName || workshopName.trim(),
+        workshopAddress: res.user.workshopAddress || workshopAddress.trim(),
+      };
+
+      setSuccessMessage(
+        isFirstAccess
+          ? 'Conta criada na nuvem com sucesso! Entrando no sistema...'
+          : 'Perfil atualizado na nuvem com sucesso!'
+      );
+
+      if (isFirstAccess && onFirstAccessSuccess) {
+        await onFirstAccessSuccess(savedProfile);
+      } else {
+        onSaveProfile(savedProfile);
+      }
+
+      setTimeout(() => {
+        onClose();
+      }, 450);
+    } catch (err: any) {
+      setErrorMessage(err?.message || 'Erro de conexão com o banco de dados.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Helper to ensure input scrolls clearly into view when mobile keyboard appears
   const handleInputFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     const target = e.target;
-    // Delay slightly so mobile browser finishes opening keyboard & calculating viewport height
     setTimeout(() => {
       target.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, 250);
@@ -162,11 +186,11 @@ export function ProfileModal({
             </div>
             <div>
               <h2 className="text-lg sm:text-xl font-bold tracking-tight text-zinc-900 dark:text-white">
-                {isFirstAccess ? 'Primeiro Acesso - Criar Perfil' : 'Perfil do Usuário'}
+                {isFirstAccess ? 'Primeiro Acesso - Criar Conta na Nuvem' : 'Perfil do Usuário'}
               </h2>
               <p className="text-[11px] sm:text-xs text-zinc-500 dark:text-zinc-400 line-clamp-1">
                 {isFirstAccess
-                  ? 'Cadastre seus dados e senha para acessar o JL Automotive'
+                  ? 'Cadastre seu e-mail e senha para acessar sua conta de qualquer dispositivo'
                   : 'Gerencie seus dados de acesso e da oficina JL Automotive'}
               </p>
             </div>
@@ -222,7 +246,7 @@ export function ProfileModal({
               <input
                 type="tel"
                 inputMode="tel"
-                required
+                required={isFirstAccess}
                 value={phone}
                 onFocus={handleInputFocus}
                 onChange={handlePhoneChange}
@@ -239,19 +263,29 @@ export function ProfileModal({
 
           {/* E-mail */}
           <div className="scroll-mt-24">
-            <label className="block text-xs font-semibold mb-1 text-zinc-700 dark:text-zinc-300">
-              E-mail <span className="text-red-500">*</span>
+            <label className="block text-xs font-semibold mb-1 text-zinc-700 dark:text-zinc-300 flex items-center justify-between">
+              <span>
+                E-mail <span className="text-red-500">*</span>
+              </span>
+              {!isFirstAccess && (
+                <span className="text-[10px] text-zinc-400">Conta na nuvem</span>
+              )}
             </label>
             <div className="relative">
               <input
                 type="email"
                 inputMode="email"
                 required
+                readOnly={!isFirstAccess}
                 value={email}
                 onFocus={handleInputFocus}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  if (isFirstAccess) setEmail(e.target.value);
+                }}
                 placeholder="seuemail@oficina.com.br"
                 className={`w-full pl-9 pr-3.5 py-3 sm:py-2.5 rounded-xl text-base sm:text-sm border focus:outline-hidden transition-all ${
+                  !isFirstAccess ? 'opacity-75 cursor-not-allowed' : ''
+                } ${
                   isLight
                     ? 'bg-zinc-50 border-zinc-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-zinc-900'
                     : 'bg-zinc-800/80 border-zinc-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-950 text-white'
@@ -262,16 +296,16 @@ export function ProfileModal({
           </div>
 
           {/* Senha e Confirmar senha */}
-          {/* Requirement: Ao digitar perfil aparecer teclado para digitar telefone, senha e confirmar senha */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 scroll-mt-24">
             <div>
               <label className="block text-xs font-semibold mb-1 text-zinc-700 dark:text-zinc-300">
-                Senha
+                Senha {isFirstAccess && <span className="text-red-500">*</span>}
               </label>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
                   inputMode="text"
+                  required={isFirstAccess}
                   value={password}
                   onFocus={handleInputFocus}
                   onChange={(e) => setPassword(e.target.value)}
@@ -295,12 +329,13 @@ export function ProfileModal({
 
             <div>
               <label className="block text-xs font-semibold mb-1 text-zinc-700 dark:text-zinc-300">
-                Confirmar Senha
+                Confirmar Senha {isFirstAccess && <span className="text-red-500">*</span>}
               </label>
               <div className="relative">
                 <input
                   type={showConfirmPassword ? 'text' : 'password'}
                   inputMode="text"
+                  required={isFirstAccess}
                   value={confirmPassword}
                   onFocus={handleInputFocus}
                   onChange={(e) => setConfirmPassword(e.target.value)}
@@ -347,7 +382,8 @@ export function ProfileModal({
             <button
               type="button"
               onClick={onClose}
-              className={`px-4 py-2.5 rounded-xl text-xs font-semibold border transition-colors cursor-pointer ${
+              disabled={isSaving}
+              className={`px-4 py-2.5 rounded-xl text-xs font-semibold border transition-colors cursor-pointer disabled:opacity-50 ${
                 isLight
                   ? 'border-zinc-300 text-zinc-700 hover:bg-zinc-100'
                   : 'border-zinc-700 text-zinc-300 hover:bg-zinc-800'
@@ -357,14 +393,25 @@ export function ProfileModal({
             </button>
             <button
               type="submit"
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black shadow-md transition-all active:scale-98 cursor-pointer ${
+              disabled={isSaving}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black shadow-md transition-all active:scale-98 cursor-pointer disabled:opacity-60 ${
                 isLight
                   ? 'bg-[#00FF7F] hover:bg-[#00e676] text-black shadow-emerald-500/20'
                   : 'bg-emerald-600 hover:bg-emerald-700 text-black shadow-emerald-600/30'
               }`}
             >
-              <Save className="w-4 h-4 text-black" />
-              <span>{isFirstAccess ? 'Criar Perfil e Acessar' : 'Salvar'}</span>
+              {isSaving ? (
+                <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Save className="w-4 h-4 text-black" />
+              )}
+              <span>
+                {isSaving
+                  ? 'Salvando...'
+                  : isFirstAccess
+                  ? 'Criar Perfil e Acessar'
+                  : 'Salvar'}
+              </span>
             </button>
           </div>
         </form>

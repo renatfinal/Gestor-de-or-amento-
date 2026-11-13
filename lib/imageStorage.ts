@@ -189,3 +189,22 @@ export async function getBudgetsFromIndexedDb(): Promise<unknown[] | null> {
     return null;
   }
 }
+
+/**
+ * Clears all cached photos and budgets from IndexedDB when logging out or switching accounts
+ */
+export async function clearIndexedDb(): Promise<void> {
+  try {
+    const db = await openDatabase();
+    await new Promise<void>((resolve) => {
+      const tx = db.transaction([STORE_PHOTOS, STORE_BUDGETS], 'readwrite');
+      tx.objectStore(STORE_PHOTOS).clear();
+      tx.objectStore(STORE_BUDGETS).clear();
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => resolve();
+    });
+  } catch (err) {
+    console.warn('IndexedDB clear error:', err);
+  }
+}
+

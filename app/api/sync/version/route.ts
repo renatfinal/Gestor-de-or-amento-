@@ -6,9 +6,15 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const rawUserId =
-    searchParams.get('userId') || searchParams.get('email') || 'renatof.rcc@gmail.com';
+  const rawUserId = searchParams.get('userId') || searchParams.get('email') || '';
   const canonicalUserId = getCanonicalWorkspaceUserId(rawUserId);
+
+  if (!canonicalUserId) {
+    return NextResponse.json(
+      { error: 'userId é obrigatório.' },
+      { status: 400 }
+    );
+  }
 
   // Consulta o timestamp persistido no PostgreSQL (compartilhado entre múltiplos containers Cloud Run)
   const dbVersion = await getWorkspaceSyncTimestamp(canonicalUserId);
