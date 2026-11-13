@@ -220,9 +220,32 @@ export async function signInWithGoogleOAuth(): Promise<{
     return { success: true, session, user: data.user };
   } catch (err: any) {
     console.error('Google Sign-In error:', err);
+    const code = err?.code || '';
+    let friendlyError =
+      err?.message || 'Não foi possível concluir o login com o Google.';
+
+    if (code === 'auth/unauthorized-domain') {
+      friendlyError =
+        'Este domínio ainda não está autorizado para Login com Google no Firebase. Entre acima usando seu E-mail e Senha ou adicione este domínio nos Domínios Autorizados do Firebase Authentication.';
+    } else if (code === 'auth/popup-blocked') {
+      friendlyError =
+        'O navegador bloqueou a janela do Google. Permita pop-ups para este site ou entre usando seu E-mail e Senha acima.';
+    } else if (
+      code === 'auth/popup-closed-by-user' ||
+      code === 'auth/cancelled-popup-request'
+    ) {
+      friendlyError = 'Login com Google cancelado pelo usuário.';
+    } else if (code === 'auth/operation-not-allowed') {
+      friendlyError =
+        'Login com Google não está habilitado no projeto Firebase. Entre usando seu E-mail e Senha acima.';
+    } else if (code === 'auth/network-request-failed') {
+      friendlyError =
+        'Falha de conexão ao autenticar com o Google. Verifique sua internet ou entre com E-mail e Senha.';
+    }
+
     return {
       success: false,
-      error: err?.message || 'Não foi possível concluir o login com o Google.',
+      error: friendlyError,
     };
   }
 }
