@@ -237,8 +237,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Ação não suportada.' }, { status: 400 });
   } catch (error: any) {
     console.error('API /api/auth error:', error);
+    const detailedMsg = error?.cause?.message
+      ? `${error.message} (${error.cause.message})`
+      : error?.message || 'Erro no servidor de autenticação.';
     return NextResponse.json(
-      { error: error?.message || 'Erro no servidor de autenticação.' },
+      { error: detailedMsg },
       { status: 500 }
     );
   }
