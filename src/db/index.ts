@@ -14,8 +14,9 @@ export const createPool = () => {
       global._postgresPool = new Pool({
         connectionString,
         ssl: { rejectUnauthorized: false },
-        max: 10,
-        connectionTimeoutMillis: 15000,
+        max: 5,
+        idleTimeoutMillis: 20000,
+        connectionTimeoutMillis: 10000,
       });
     } else {
       const isRemote =
@@ -27,8 +28,9 @@ export const createPool = () => {
         password: process.env.SQL_PASSWORD,
         database: process.env.SQL_DB_NAME,
         ssl: isRemote ? { rejectUnauthorized: false } : undefined,
-        max: 10,
-        connectionTimeoutMillis: 15000,
+        max: 5,
+        idleTimeoutMillis: 20000,
+        connectionTimeoutMillis: 10000,
       });
     }
 
