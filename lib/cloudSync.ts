@@ -33,9 +33,17 @@ export async function syncDataToCloud(
       }),
     });
 
+    const contentType = res.headers.get('content-type');
     if (!res.ok) {
-      const errJson = await res.json().catch(() => ({}));
-      return { success: false, error: errJson.error || 'Falha ao sincronizar' };
+      if (contentType && contentType.includes('application/json')) {
+        const errJson = await res.json().catch(() => ({}));
+        return { success: false, error: errJson.error || 'Falha ao sincronizar' };
+      }
+      return { success: false, error: `Falha no servidor (${res.status})` };
+    }
+
+    if (!contentType || !contentType.includes('application/json')) {
+      return { success: false, error: 'Resposta inválida do servidor.' };
     }
 
     return { success: true };
@@ -58,6 +66,9 @@ export async function fetchCloudData(userId: string): Promise<FullAppData | null
       }
     );
     if (!res.ok) return null;
+    const contentType = res.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) return null;
+
     const json = await res.json();
     if (json.success && json.data) {
       return json.data as FullAppData;
@@ -79,6 +90,9 @@ export async function checkSyncVersion(userId: string): Promise<number> {
       }
     );
     if (!res.ok) return 0;
+    const contentType = res.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) return 0;
+
     const json = await res.json();
     return json.version || 0;
   } catch (e) {
@@ -165,6 +179,13 @@ export async function authenticateWithDb(payload: {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
+
+    const contentType = res.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      const text = await res.text().catch(() => '');
+      console.error('Non-JSON response from /api/auth:', text.slice(0, 150));
+      return { success: false, error: `Erro no servidor (${res.status}): Resposta inválida.` };
+    }
 
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
