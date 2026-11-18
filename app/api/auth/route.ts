@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminAuth } from '@/src/lib/firebase-admin';
 import firebaseConfig from '../../../firebase-applet-config.json';
 import {
   getOrCreateUser,
@@ -15,36 +14,26 @@ async function verifyFirebaseTokenWithFallback(idToken: string): Promise<{
   name?: string;
 } | null> {
   try {
-    const decoded = await adminAuth.verifyIdToken(idToken);
+    const resp = await fetch(
+      `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${firebaseConfig.apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken }),
+      }
+    );
+    if (!resp.ok) return null;
+    const json = await resp.json();
+    const fbUser = json?.users?.[0];
+    if (!fbUser?.email) return null;
     return {
-      uid: decoded.uid,
-      email: decoded.email,
-      name: decoded.name,
+      uid: fbUser.localId || fbUser.email,
+      email: fbUser.email,
+      name: fbUser.displayName,
     };
-  } catch (adminErr) {
-    // Fallback to Firebase Auth REST lookup if server lacks ADC service account
-    try {
-      const resp = await fetch(
-        `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${firebaseConfig.apiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ idToken }),
-        }
-      );
-      if (!resp.ok) return null;
-      const json = await resp.json();
-      const fbUser = json?.users?.[0];
-      if (!fbUser?.email) return null;
-      return {
-        uid: fbUser.localId || fbUser.email,
-        email: fbUser.email,
-        name: fbUser.displayName,
-      };
-    } catch {
-      console.warn('Firebase token verification failed:', adminErr);
-      return null;
-    }
+  } catch (err) {
+    console.warn('Firebase token verification failed:', err);
+    return null;
   }
 }
 
