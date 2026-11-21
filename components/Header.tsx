@@ -4,9 +4,7 @@ import React from 'react';
 import {
   Sun,
   Moon,
-  User,
   Car,
-  LogOut,
   Database,
   RefreshCw,
 } from 'lucide-react';
@@ -17,7 +15,6 @@ interface HeaderProps {
   onToggleTheme: () => void;
   onOpenProfile: () => void;
   onOpenDatabaseTables?: () => void;
-  onLogout?: () => void;
   profile: UserProfile;
   totalBudgets: number;
   isSyncing?: boolean;
@@ -29,7 +26,6 @@ export function Header({
   onToggleTheme,
   onOpenProfile,
   onOpenDatabaseTables,
-  onLogout,
   profile,
   totalBudgets,
   isSyncing = false,
@@ -46,45 +42,52 @@ export function Header({
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between gap-4">
-        {/* Brand & Logo: JL Automotive */}
+        {/* Brand & Logo: JL Automotive - Clickable to open Profile */}
         <div className="flex items-center gap-3">
-          <div
-            className={`w-11 h-11 rounded-2xl flex items-center justify-center font-black text-lg shadow-sm border transition-all ${
-              isLight
-                ? 'bg-[#00FF7F] text-black border-emerald-400 font-black shadow-emerald-500/20'
-                : 'bg-gradient-to-br from-emerald-500 to-emerald-700 text-black border-emerald-400/50 shadow-emerald-500/20'
-            }`}
+          <button
+            type="button"
+            onClick={onOpenProfile}
+            className="flex items-center gap-3 text-left group cursor-pointer focus:outline-hidden"
+            title="Abrir Perfil do Usuário e Configurações"
           >
-            <div className="flex flex-col items-center leading-none">
-              <span className="text-xs font-black tracking-tighter">JL</span>
-              <Car className="w-3.5 h-3.5" />
+            <div
+              className={`w-11 h-11 rounded-2xl flex items-center justify-center font-black text-lg shadow-sm border transition-all group-hover:scale-105 ${
+                isLight
+                  ? 'bg-[#00FF7F] text-black border-emerald-400 font-black shadow-emerald-500/20'
+                  : 'bg-gradient-to-br from-emerald-500 to-emerald-700 text-black border-emerald-400/50 shadow-emerald-500/20'
+              }`}
+            >
+              <div className="flex flex-col items-center leading-none">
+                <span className="text-xs font-black tracking-tighter">JL</span>
+                <Car className="w-3.5 h-3.5" />
+              </div>
             </div>
-          </div>
 
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-lg md:text-xl font-black tracking-tight leading-none text-black dark:text-white">
-                JL Automotive
-              </h1>
-              <span
-                className={`hidden sm:inline-block text-[10px] uppercase font-black tracking-wider px-2.5 py-0.5 rounded-full ${
-                  isLight
-                    ? 'bg-emerald-100 text-emerald-950 border border-emerald-300'
-                    : 'bg-emerald-950 text-emerald-300 border border-emerald-800/40'
-                }`}
-              >
-                Pintura & Estufa
-              </span>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-lg md:text-xl font-black tracking-tight leading-none text-black dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                  JL Automotive
+                </h1>
+                <span
+                  className={`hidden sm:inline-block text-[10px] uppercase font-black tracking-wider px-2.5 py-0.5 rounded-full ${
+                    isLight
+                      ? 'bg-emerald-100 text-emerald-950 border border-emerald-300'
+                      : 'bg-emerald-950 text-emerald-300 border border-emerald-800/40'
+                  }`}
+                >
+                  Perfil
+                </span>
+              </div>
+              <p className="text-[11px] font-bold text-zinc-600 dark:text-zinc-400 mt-0.5">
+                {profile.name ? `Olá, ${profile.name.split(' ')[0]} • Toque para Perfil` : 'Oficina • Toque para Perfil'}
+              </p>
             </div>
-            <p className="text-[11px] font-bold text-black dark:text-zinc-400 mt-0.5 hidden xs:block">
-              Oficina Especializada em Pintura & Reparação Automotiva
-            </p>
-          </div>
+          </button>
         </div>
 
-        {/* Right side controls: Theme Switcher & Profile button */}
+        {/* Right side controls: Theme Switcher, Live Sync, Database Tables */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Theme switcher: Claro com Verde Primavera vs Escuro com Preto & Verde Primavera */}
+          {/* Theme switcher */}
           <button
             type="button"
             onClick={onToggleTheme}
@@ -102,12 +105,12 @@ export function Header({
             {isLight ? (
               <>
                 <Sun className="w-4 h-4 text-emerald-800" />
-                <span className="hidden md:inline text-black font-black">Claro (Verde Primavera)</span>
+                <span className="hidden md:inline text-black font-black">Claro</span>
               </>
             ) : (
               <>
                 <Moon className="w-4 h-4 text-emerald-400" />
-                <span className="hidden md:inline">Escuro (Preto & Verde)</span>
+                <span className="hidden md:inline">Escuro</span>
               </>
             )}
           </button>
@@ -144,50 +147,10 @@ export function Header({
                   ? 'bg-emerald-50 border-emerald-300 text-emerald-950 hover:bg-emerald-100'
                   : 'bg-emerald-950/40 border-emerald-700/60 text-emerald-300 hover:bg-emerald-950/70'
               }`}
-              title="Abrir Banco de Dados e Tabelas Organizadoras (Check-lists, Eventos, Orçamentos)"
+              title="Abrir Banco de Dados e Tabelas Organizadoras"
             >
               <Database className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 animate-pulse" />
               <span className="hidden sm:inline">Banco & Tabelas</span>
-            </button>
-          )}
-
-          {/* Profile button */}
-          <button
-            type="button"
-            onClick={onOpenProfile}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
-              isLight
-                ? 'border-zinc-400 bg-white hover:bg-zinc-100 text-black shadow-xs'
-                : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-800 text-zinc-200'
-            }`}
-            title="Acessar Perfil"
-          >
-            <div
-              className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-black ${
-                isLight ? 'bg-emerald-200 text-black' : 'bg-emerald-950 text-emerald-300'
-              }`}
-            >
-              {profile.name ? profile.name.charAt(0).toUpperCase() : <User className="w-3.5 h-3.5" />}
-            </div>
-            <span className="hidden sm:inline font-bold text-xs text-black dark:text-zinc-200">
-              {profile.name.split(' ')[0] || 'Perfil'}
-            </span>
-          </button>
-
-          {/* Logout / Sair button */}
-          {onLogout && (
-            <button
-              type="button"
-              onClick={onLogout}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
-                isLight
-                  ? 'border-red-200 bg-red-50/70 text-red-700 hover:bg-red-100'
-                  : 'border-red-900/40 bg-red-950/20 text-red-400 hover:bg-red-950/40 hover:border-red-800/60'
-              }`}
-              title="Sair do aplicativo / Bloquear tela"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">Sair</span>
             </button>
           )}
         </div>

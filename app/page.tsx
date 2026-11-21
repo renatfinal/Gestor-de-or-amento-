@@ -705,7 +705,6 @@ export default function HomePage() {
         onToggleTheme={handleToggleTheme}
         onOpenProfile={() => setIsProfileModalOpen(true)}
         onOpenDatabaseTables={() => setIsDatabaseTablesModalOpen(true)}
-        onLogout={handleLogout}
         profile={profile}
         totalBudgets={budgets.length}
         isSyncing={isSyncing}
@@ -888,6 +887,10 @@ export default function HomePage() {
           profile={profile}
           onSaveProfile={handleSaveProfile}
           onClose={() => setIsProfileModalOpen(false)}
+          onLogout={() => {
+            setIsProfileModalOpen(false);
+            handleLogout();
+          }}
           theme={theme}
         />
       )}
