@@ -59,16 +59,17 @@ export function ClientsView({
   const [formError, setFormError] = useState<string | null>(null);
 
   // Filter clients and ensure sorted alphabetically (A-Z)
-  const filteredClients = clients
+  const safeClients = Array.isArray(clients) ? clients : [];
+  const filteredClients = safeClients
     .filter((c) => {
       const q = searchTerm.toLowerCase();
       return (
-        c.name.toLowerCase().includes(q) ||
-        c.phone.toLowerCase().includes(q) ||
+        (c.name || '').toLowerCase().includes(q) ||
+        (c.phone || '').toLowerCase().includes(q) ||
         (c.lastVehicle && c.lastVehicle.toLowerCase().includes(q))
       );
     })
-    .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+    .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'pt-BR'));
 
   const handleOpenEditor = (client?: Client) => {
     setFormError(null);

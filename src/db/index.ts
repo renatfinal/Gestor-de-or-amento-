@@ -34,6 +34,11 @@ export const createPool = () => {
       });
     }
 
+    // Force search_path to public so Supabase auth schema doesn't shadow custom public tables
+    global._postgresPool.on('connect', (client) => {
+      client.query('SET search_path TO public;').catch(() => {});
+    });
+
     global._postgresPool.on('error', (err) => {
       console.error('Unexpected error on idle SQL pool client:', err);
     });

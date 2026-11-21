@@ -41,9 +41,10 @@ export function BalanceteView({ transactions, theme }: BalanceteViewProps) {
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
 
   // Compute month-by-month figures
+  const safeTransactions = Array.isArray(transactions) ? transactions : [];
   const monthlyData = MONTHS_LIST.map((name, monthIndex) => {
-    const monthTransactions = transactions.filter((t) => {
-      if (!t.date) return false;
+    const monthTransactions = safeTransactions.filter((t) => {
+      if (!t || !t.date) return false;
       const [yStr, mStr] = t.date.split('-');
       const y = parseInt(yStr, 10);
       const m = parseInt(mStr, 10) - 1;

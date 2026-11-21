@@ -99,7 +99,9 @@ export function FinancialView({
   const [formError, setFormError] = useState<string | null>(null);
 
   // Filter transactions
-  const filteredList = transactions.filter((t) => {
+  const safeTransactions = Array.isArray(transactions) ? transactions : [];
+  const filteredList = safeTransactions.filter((t) => {
+    if (!t) return false;
     if (activeSubTab !== 'all' && t.type !== activeSubTab) return false;
 
     if (selectedPaymentFilter !== 'all') {
@@ -120,8 +122,8 @@ export function FinancialView({
 
   // Calculate Totals requested by user:
   // Entrada, Saída, Saldo Devedor, Saldo
-  const allYearTransactions = transactions.filter((t) => {
-    if (!t.date) return false;
+  const allYearTransactions = safeTransactions.filter((t) => {
+    if (!t || !t.date) return false;
     const y = parseInt(t.date.split('-')[0], 10);
     return y === selectedYear;
   });
