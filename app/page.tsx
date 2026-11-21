@@ -216,6 +216,7 @@ export default function HomePage() {
                 prev.workshopName ||
                 'JL Automotive & Pintura Automotiva',
               workshopAddress: cloudData.user.workshopAddress ?? prev.workshopAddress ?? '',
+              avatarUrl: cloudData.user.avatarUrl || prev.avatarUrl || '',
             };
             setProfile(syncedProfile);
             saveStoredProfile(syncedProfile);
@@ -454,12 +455,17 @@ export default function HomePage() {
 
   // Profile save
   const handleSaveProfile = (newProfile: UserProfile) => {
-    setProfile(newProfile);
-    saveStoredProfile(newProfile);
+    const mergedProfile = {
+      ...profile,
+      ...newProfile,
+      avatarUrl: newProfile.avatarUrl !== undefined ? newProfile.avatarUrl : profile.avatarUrl,
+    };
+    setProfile(mergedProfile);
+    saveStoredProfile(mergedProfile);
     if (session) {
       const updatedSession: AuthSession = {
         ...session,
-        name: newProfile.name || session.name,
+        name: mergedProfile.name || session.name,
       };
       setSession(updatedSession);
       saveStoredSession(updatedSession);

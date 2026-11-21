@@ -268,6 +268,7 @@ export const INITIAL_PROFILE: UserProfile = {
   password: '',
   workshopName: 'JL Automotive & Pintura Automotiva',
   workshopAddress: '',
+  avatarUrl: '',
 };
 
 export function getStoredTheme(): ThemeMode {

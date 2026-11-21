@@ -51,16 +51,26 @@ export function Header({
             title="Abrir Perfil do Usuário e Configurações"
           >
             <div
-              className={`w-11 h-11 rounded-2xl flex items-center justify-center font-black text-lg shadow-sm border transition-all group-hover:scale-105 ${
+              className={`w-11 h-11 rounded-2xl flex items-center justify-center font-black text-lg shadow-sm border transition-all group-hover:scale-105 overflow-hidden ${
                 isLight
                   ? 'bg-[#00FF7F] text-black border-emerald-400 font-black shadow-emerald-500/20'
                   : 'bg-gradient-to-br from-emerald-500 to-emerald-700 text-black border-emerald-400/50 shadow-emerald-500/20'
               }`}
             >
-              <div className="flex flex-col items-center leading-none">
-                <span className="text-xs font-black tracking-tighter">JL</span>
-                <Car className="w-3.5 h-3.5" />
-              </div>
+              {profile.avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={profile.avatarUrl}
+                  alt={profile.name || 'Perfil'}
+                  referrerPolicy="no-referrer"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="flex flex-col items-center leading-none">
+                  <span className="text-xs font-black tracking-tighter">JL</span>
+                  <Car className="w-3.5 h-3.5" />
+                </div>
+              )}
             </div>
 
             <div>

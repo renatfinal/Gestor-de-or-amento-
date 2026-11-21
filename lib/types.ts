@@ -70,6 +70,7 @@ export interface UserProfile {
   password?: string;
   workshopName: string;
   workshopAddress?: string;
+  avatarUrl?: string;
 }
 
 export interface CalendarEvent {

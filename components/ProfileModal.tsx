@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   X,
   User,
@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   UserPlus,
   LogOut,
+  Camera,
 } from 'lucide-react';
 import { UserProfile, ThemeMode } from '@/lib/types';
 import { formatPhone } from '@/lib/formatters';
@@ -57,6 +58,8 @@ export function ProfileModal({
   const [workshopAddress] = useState(() =>
     isFirstAccess ? '' : profile.workshopAddress || ''
   );
+  const [avatarUrl, setAvatarUrl] = useState(() => profile.avatarUrl || '');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // UI state
   const [showPassword, setShowPassword] = useState(false);
@@ -68,6 +71,20 @@ export function ProfileModal({
   // Requirement: Ao preencher o telefone separado como o ex (xx) xxxxx-xxxx
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPhone(formatPhone(e.target.value));
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      setErrorMessage('A imagem é muito grande. Escolha uma foto com menos de 5MB.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setAvatarUrl(reader.result as string);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -124,6 +141,7 @@ export function ProfileModal({
         password: res.user.password || cleanPassword,
         workshopName: res.user.workshopName || workshopName.trim(),
         workshopAddress: res.user.workshopAddress || workshopAddress.trim(),
+        avatarUrl: avatarUrl || undefined,
       };
 
       setSuccessMessage(
@@ -180,22 +198,48 @@ export function ProfileModal({
         {/* Pinned Header */}
         <div className="p-4 sm:p-6 pb-3 border-b border-zinc-100 dark:border-zinc-800/80 shrink-0">
           <div className="flex items-center gap-3 pr-8">
-            <div
-              className={`w-12 h-12 rounded-2xl flex items-center justify-center text-lg font-black shrink-0 shadow-sm ${
-                isLight ? 'bg-emerald-200 text-black border border-emerald-300' : 'bg-emerald-950 text-emerald-300 border border-emerald-800'
-              }`}
-            >
-              {profile.name ? profile.name.charAt(0).toUpperCase() : <User className="w-6 h-6" />}
+            <div className="relative group cursor-pointer shrink-0" onClick={() => fileInputRef.current?.click()}>
+              <div
+                className={`w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-black shrink-0 shadow-sm overflow-hidden border transition-transform active:scale-95 ${
+                  isLight ? 'bg-emerald-200 text-black border-emerald-400' : 'bg-emerald-950 text-emerald-300 border-emerald-700'
+                }`}
+                title="Toque para importar foto da galeria"
+              >
+                {avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={avatarUrl}
+                    alt={name || 'Perfil'}
+                    referrerPolicy="no-referrer"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span>{name ? name.charAt(0).toUpperCase() : 'R'}</span>
+                )}
+                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                  <Camera className="w-5 h-5" />
+                </div>
+              </div>
+              <input
+                type="file"
+                accept="image/*"
+                ref={fileInputRef}
+                onChange={handleImageUpload}
+                className="hidden"
+              />
             </div>
             <div>
               <h2 className="text-lg sm:text-xl font-bold tracking-tight text-zinc-900 dark:text-white">
                 {isFirstAccess ? 'Primeiro Acesso - Criar Conta na Nuvem' : (profile.name || 'Perfil do Usuário')}
               </h2>
-              <p className="text-[11px] sm:text-xs text-zinc-500 dark:text-zinc-400 line-clamp-1">
-                {isFirstAccess
-                  ? 'Cadastre seu e-mail e senha para acessar sua conta de qualquer dispositivo'
-                  : (profile.email || 'Gerencie seus dados de acesso e da oficina JL Automotive')}
-              </p>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="text-xs font-black text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 mt-0.5 cursor-pointer"
+              >
+                <Camera className="w-3.5 h-3.5" />
+                <span>Importar foto da galeria</span>
+              </button>
             </div>
           </div>
 
