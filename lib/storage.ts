@@ -287,7 +287,8 @@ export function getStoredBudgets(): Budget[] {
   try {
     const item = localStorage.getItem(STORAGE_KEYS.BUDGETS) || localStorage.getItem(LEGACY_STORAGE_KEYS.BUDGETS);
     if (!item) return [];
-    return JSON.parse(item);
+    const parsed = JSON.parse(item);
+    return Array.isArray(parsed) ? parsed : [];
   } catch (err) {
     console.error('Error reading budgets:', err);
     return [];
@@ -307,13 +308,10 @@ export function saveStoredBudgets(budgets: Budget[]) {
   } catch (err: unknown) {
     console.warn('Quota exceeded in localStorage. Creating optimized lightweight storage copy...', err);
     try {
-      // If quota exceeded, strip or compress inline dataUrls in localStorage
-      // Keep metadata while full photos are preserved in IndexedDB and in-memory React state
       const lightweightBudgets = budgets.map((b) => ({
         ...b,
         photos: (b.photos || []).map((p, idx) => ({
           ...p,
-          // Only keep dataUrl if under 40KB and only the first 2 photos
           dataUrl: idx < 2 && p.dataUrl && p.dataUrl.length < 50000 ? p.dataUrl : '',
         })),
       }));
@@ -321,7 +319,6 @@ export function saveStoredBudgets(budgets: Budget[]) {
     } catch (fallbackErr) {
       console.warn('Secondary localStorage fallback:', fallbackErr);
       try {
-        // Ultimate fallback: save budgets with empty photos array in localStorage
         const noPhotosBudgets = budgets.map((b) => ({
           ...b,
           photos: (b.photos || []).map((p) => ({
@@ -344,8 +341,9 @@ export function getStoredClients(): Client[] {
   try {
     const item = localStorage.getItem(STORAGE_KEYS.CLIENTS) || localStorage.getItem(LEGACY_STORAGE_KEYS.CLIENTS);
     if (!item) return [];
-    const clients: Client[] = JSON.parse(item);
-    return clients.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+    const parsed = JSON.parse(item);
+    const clients: Client[] = Array.isArray(parsed) ? parsed : [];
+    return clients.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'pt-BR'));
   } catch (err) {
     console.error('Error reading clients:', err);
     return [];
@@ -355,7 +353,7 @@ export function getStoredClients(): Client[] {
 export function saveStoredClients(clients: Client[]) {
   if (typeof window === 'undefined') return;
   try {
-    const sorted = [...clients].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+    const sorted = [...clients].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'pt-BR'));
     localStorage.setItem(STORAGE_KEYS.CLIENTS, JSON.stringify(sorted));
   } catch (err) {
     console.error('Error saving clients:', err);
@@ -367,7 +365,8 @@ export function getStoredTransactions(): FinancialTransaction[] {
   try {
     const item = localStorage.getItem(STORAGE_KEYS.TRANSACTIONS) || localStorage.getItem(LEGACY_STORAGE_KEYS.TRANSACTIONS);
     if (!item) return [];
-    return JSON.parse(item);
+    const parsed = JSON.parse(item);
+    return Array.isArray(parsed) ? parsed : [];
   } catch (err) {
     console.error('Error reading transactions:', err);
     return [];
@@ -390,8 +389,8 @@ export function getStoredProfile(): UserProfile {
     if (!item) {
       return INITIAL_PROFILE;
     }
-    const parsed: UserProfile = JSON.parse(item);
-    return parsed;
+    const parsed = JSON.parse(item);
+    return parsed && typeof parsed === 'object' ? { ...INITIAL_PROFILE, ...parsed } : INITIAL_PROFILE;
   } catch (err) {
     console.error('Error reading profile:', err);
     return INITIAL_PROFILE;
