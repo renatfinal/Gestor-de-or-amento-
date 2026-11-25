@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
   try {
     const authHeader = req.headers.get('authorization');
     const body = await req.json().catch(() => ({}));
-    const { action, email, password, name, phone, workshopName, workshopAddress } = body;
+    const { action, email, password, name, phone, workshopName, workshopAddress, avatarUrl } = body;
 
     const cleanEmail = (email || '').trim().toLowerCase();
     const cleanPassword = (password || '').trim();
@@ -158,6 +158,7 @@ export async function POST(req: NextRequest) {
         phone: (phone || '').trim(),
         workshopName: (workshopName || 'JL Automotive - Funilaria & Pintura').trim(),
         workshopAddress: workshopAddress ? workshopAddress.trim() : '',
+        avatarUrl,
         password: cleanPassword,
       });
 
@@ -214,6 +215,7 @@ export async function POST(req: NextRequest) {
         phone,
         workshopName,
         workshopAddress,
+        avatarUrl,
         password: cleanPassword || undefined,
       });
 

@@ -63,6 +63,7 @@ export async function GET(req: NextRequest) {
                 phone: userRecord.phone,
                 workshopName: userRecord.workshopName,
                 workshopAddress: userRecord.workshopAddress,
+                avatarUrl: userRecord.avatarUrl,
                 password: userRecord.password,
               }
             : null,
@@ -138,6 +139,7 @@ export async function POST(req: NextRequest) {
           phone: profile.phone,
           workshopName: profile.workshopName,
           workshopAddress: profile.workshopAddress,
+          avatarUrl: profile.avatarUrl,
           password: profile.password,
         });
       }

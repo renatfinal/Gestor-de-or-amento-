@@ -9,6 +9,7 @@ export const users = pgTable('users', {
   phone: text('phone'),
   workshopName: text('workshop_name'),
   workshopAddress: text('workshop_address'),
+  avatarUrl: text('avatar_url'),
   password: text('password'),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),

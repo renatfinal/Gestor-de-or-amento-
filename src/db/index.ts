@@ -34,9 +34,10 @@ export const createPool = () => {
       });
     }
 
-    // Force search_path to public so Supabase auth schema doesn't shadow custom public tables
+    // Force search_path to public and ensure avatar_url column exists
     global._postgresPool.on('connect', (client) => {
       client.query('SET search_path TO public;').catch(() => {});
+      client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;').catch(() => {});
     });
 
     global._postgresPool.on('error', (err) => {

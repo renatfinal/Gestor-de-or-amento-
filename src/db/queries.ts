@@ -10,6 +10,7 @@ export async function getOrCreateUser(data: {
   phone?: string;
   workshopName?: string;
   workshopAddress?: string;
+  avatarUrl?: string;
   password?: string;
 }) {
   try {
@@ -32,6 +33,9 @@ export async function getOrCreateUser(data: {
           ...(data.workshopAddress !== undefined
             ? { workshopAddress: data.workshopAddress.trim() }
             : {}),
+          ...(data.avatarUrl !== undefined
+            ? { avatarUrl: data.avatarUrl }
+            : {}),
           ...(data.password && data.password.trim()
             ? { password: data.password.trim() }
             : {}),
@@ -51,6 +55,7 @@ export async function getOrCreateUser(data: {
         phone: (data.phone || '').trim(),
         workshopName: (data.workshopName || 'JL Automotive - Funilaria & Pintura').trim(),
         workshopAddress: (data.workshopAddress || '').trim(),
+        avatarUrl: data.avatarUrl || '',
         password: (data.password || '').trim(),
       })
       .returning();
